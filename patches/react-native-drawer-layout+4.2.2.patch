@@ -1,0 +1,65 @@
+diff --git a/node_modules/react-native-drawer-layout/lib/module/views/Drawer.native.js b/node_modules/react-native-drawer-layout/lib/module/views/Drawer.native.js
+index c5882f9..6c108c0 100644
+--- a/node_modules/react-native-drawer-layout/lib/module/views/Drawer.native.js
++++ b/node_modules/react-native-drawer-layout/lib/module/views/Drawer.native.js
+@@ -1,7 +1,7 @@
+ "use strict";
+ 
+ import * as React from 'react';
+-import { I18nManager, InteractionManager, Keyboard, Platform, StatusBar, StyleSheet, useWindowDimensions, View } from 'react-native';
++import { I18nManager, Keyboard, Platform, StatusBar, StyleSheet, useWindowDimensions, View } from 'react-native';
+ import Animated, { interpolate, ReduceMotion, runOnJS, useAnimatedStyle, useDerivedValue, useSharedValue, withSpring } from 'react-native-reanimated';
+ import useLatestCallback from 'use-latest-callback';
+ import { DrawerGestureContext } from "../utils/DrawerGestureContext.js";
+@@ -72,16 +72,8 @@ export function Drawer({
+     hideStatusBar(isOpen);
+     return () => hideStatusBar(false);
+   }, [isOpen, hideStatusBarOnOpen, statusBarAnimation, hideStatusBar]);
+-  const interactionHandleRef = React.useRef(null);
+-  const startInteraction = useLatestCallback(() => {
+-    interactionHandleRef.current = InteractionManager.createInteractionHandle();
+-  });
+-  const endInteraction = useLatestCallback(() => {
+-    if (interactionHandleRef.current != null) {
+-      InteractionManager.clearInteractionHandle(interactionHandleRef.current);
+-      interactionHandleRef.current = null;
+-    }
+-  });
++  const startInteraction = useLatestCallback(() => {});
++  const endInteraction = useLatestCallback(() => {});
+   const hideKeyboard = useLatestCallback(() => {
+     if (keyboardDismissMode === 'on-drag') {
+       Keyboard.dismiss();
+diff --git a/node_modules/react-native-drawer-layout/src/views/Drawer.native.tsx b/node_modules/react-native-drawer-layout/src/views/Drawer.native.tsx
+index 6c38326..e92b38b 100644
+--- a/node_modules/react-native-drawer-layout/src/views/Drawer.native.tsx
++++ b/node_modules/react-native-drawer-layout/src/views/Drawer.native.tsx
+@@ -1,7 +1,6 @@
+ import * as React from 'react';
+ import {
+   I18nManager,
+-  InteractionManager,
+   Keyboard,
+   Platform,
+   StatusBar,
+@@ -109,18 +108,8 @@ export function Drawer({
+     return () => hideStatusBar(false);
+   }, [isOpen, hideStatusBarOnOpen, statusBarAnimation, hideStatusBar]);
+ 
+-  const interactionHandleRef = React.useRef<number | null>(null);
+-
+-  const startInteraction = useLatestCallback(() => {
+-    interactionHandleRef.current = InteractionManager.createInteractionHandle();
+-  });
+-
+-  const endInteraction = useLatestCallback(() => {
+-    if (interactionHandleRef.current != null) {
+-      InteractionManager.clearInteractionHandle(interactionHandleRef.current);
+-      interactionHandleRef.current = null;
+-    }
+-  });
++  const startInteraction = useLatestCallback(() => {});
++  const endInteraction = useLatestCallback(() => {});
+ 
+   const hideKeyboard = useLatestCallback(() => {
+     if (keyboardDismissMode === 'on-drag') {
