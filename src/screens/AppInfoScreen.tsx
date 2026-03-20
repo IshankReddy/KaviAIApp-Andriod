@@ -11,9 +11,10 @@ const APP_VERSION = '1.0.0';
 const LOGO = require('../../assets/logo.png');
 
 const LINKS = [
-  { label: 'GitHub Repository', url: 'https://github.com', icon: 'github' as const },
+  { label: 'GitHub Repository', url: 'https://github.com/IshankReddy/KaviAIApp', icon: 'github' as const },
   { label: 'Hugging Face Hub', url: 'https://huggingface.co', icon: 'robot-outline' as const },
-  { label: 'Privacy Policy', url: 'https://example.com/privacy', icon: 'shield-lock-outline' as const },
+  { label: 'Privacy Policy', url: 'https://ishankreddy.github.io/KaviAIApp/privacy', icon: 'shield-lock-outline' as const },
+  { label: 'Terms of Service', url: 'https://ishankreddy.github.io/KaviAIApp/terms', icon: 'file-document-outline' as const },
 ];
 
 const LICENSES = [
