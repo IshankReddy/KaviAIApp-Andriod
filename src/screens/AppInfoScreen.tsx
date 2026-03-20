@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useNavigation, DrawerActions } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useTheme } from '../theme/theme';
+import { useTheme, DesignTokens } from '../theme/theme';
 
 const APP_VERSION = '1.0.0';
 const LOGO = require('../../assets/logo.png');
@@ -34,91 +34,199 @@ export default function AppInfoScreen() {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: Colors.surface,
+      paddingTop: Platform.OS === 'ios' ? 60 : 16,
+      paddingBottom: 14,
+      paddingHorizontal: 16,
       borderBottomWidth: 1,
       borderBottomColor: Colors.border,
-      paddingTop: Platform.OS === 'ios' ? 50 : 12,
-      paddingBottom: 10,
-      paddingHorizontal: 8,
+      zIndex: 10,
     },
-    headerBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20 },
-    headerTitle: { flex: 1, textAlign: 'center', color: Colors.onSurface, fontSize: 16, fontWeight: '600' },
-    content: { padding: 16, paddingBottom: 60 },
-    appBanner: { alignItems: 'center', paddingVertical: 28, marginBottom: 16 },
-    appLogoWrap: { width: 80, height: 80, marginBottom: 10 },
-    appLogo: { width: 80, height: 80 },
-    appName: { color: Colors.onSurface, fontSize: 26, fontWeight: '700', marginBottom: 4 },
-    appTagline: { color: Colors.metaText, fontSize: 14, marginBottom: 12 },
-    versionBadge: {
-      backgroundColor: Colors.surfaceVariant,
-      borderRadius: 12,
-      paddingHorizontal: 12,
-      paddingVertical: 4,
+    headerBtn: { 
+      width: 40, 
+      height: 40, 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      borderRadius: DesignTokens.borderRadius.sm,
+    },
+    headerTitle: { 
+      flex: 1, 
+      textAlign: 'center', 
+      color: Colors.onSurface, 
+      fontSize: 17, 
+      fontWeight: '800',
+      letterSpacing: -0.3,
+    },
+    content: { 
+      padding: DesignTokens.spacing.md, 
+      paddingBottom: 60 
+    },
+    appBanner: { alignItems: 'center', paddingVertical: 40, marginBottom: 16 },
+    appLogoWrap: { 
+      width: 90, 
+      height: 90, 
+      marginBottom: 16,
+      backgroundColor: Colors.surface,
+      borderRadius: DesignTokens.borderRadius.lg,
+      alignItems: 'center',
+      justifyContent: 'center',
       borderWidth: 1,
       borderColor: Colors.border,
+      ...Platform.select({
+        ios: {
+          shadowColor: Colors.shadowColor,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 10,
+        },
+        android: {
+          elevation: 4,
+        },
+      }),
     },
-    versionText: { color: Colors.onSurfaceVariant, fontSize: 12 },
+    appLogo: { width: 64, height: 64 },
+    appName: { 
+      color: Colors.onSurface, 
+      fontSize: 32, 
+      fontWeight: '800', 
+      marginBottom: 4,
+      letterSpacing: -0.5,
+    },
+    appTagline: { 
+      color: Colors.primary, 
+      fontSize: 14, 
+      marginBottom: 16,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+    },
+    versionBadge: {
+      backgroundColor: Colors.surfaceVariant,
+      borderRadius: DesignTokens.borderRadius.xl,
+      paddingHorizontal: 16,
+      paddingVertical: 6,
+      borderWidth: 1.5,
+      borderColor: Colors.border,
+    },
+    versionText: { 
+      color: Colors.onSurfaceVariant, 
+      fontSize: 13,
+      fontWeight: '700',
+    },
     developerCard: {
       flexDirection: 'row',
-      gap: 12,
-      backgroundColor: Colors.surfaceVariant,
-      borderRadius: 14,
-      padding: 14,
+      gap: 14,
+      backgroundColor: Colors.surface,
+      borderRadius: DesignTokens.borderRadius.lg,
+      padding: 16,
       marginBottom: 16,
-      borderWidth: 1,
+      borderWidth: 1.5,
       borderColor: Colors.border,
       alignItems: 'flex-start',
     },
     developerText: { flex: 1 },
-    developerLabel: { color: Colors.onSurface, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 },
-    developerBody: { color: Colors.onSurfaceVariant, fontSize: 13, lineHeight: 18 },
+    developerLabel: { 
+      color: Colors.onSurface, 
+      fontSize: 12, 
+      fontWeight: '800', 
+      textTransform: 'uppercase', 
+      letterSpacing: 1, 
+      marginBottom: 6 
+    },
+    developerBody: { 
+      color: Colors.onSurfaceVariant, 
+      fontSize: 14, 
+      lineHeight: 20,
+      fontWeight: '500',
+    },
     privacyCard: {
       flexDirection: 'row',
-      gap: 12,
-      backgroundColor: Colors.surfaceVariant,
-      borderRadius: 14,
-      padding: 14,
-      marginBottom: 20,
-      borderWidth: 1,
-      borderColor: Colors.primary + '44',
+      gap: 14,
+      backgroundColor: Colors.primary + '08',
+      borderRadius: DesignTokens.borderRadius.lg,
+      padding: 16,
+      marginBottom: 24,
+      borderWidth: 1.5,
+      borderColor: Colors.primary + '22',
       alignItems: 'flex-start',
     },
     privacyText: { flex: 1 },
-    privacyTitle: { color: Colors.onSurface, fontSize: 14, fontWeight: '600', marginBottom: 4 },
-    privacyBody: { color: Colors.onSurfaceVariant, fontSize: 13, lineHeight: 18 },
+    privacyTitle: { 
+      color: Colors.primary, 
+      fontSize: 16, 
+      fontWeight: '700', 
+      marginBottom: 6,
+      letterSpacing: -0.2,
+    },
+    privacyBody: { 
+      color: Colors.onSurfaceVariant, 
+      fontSize: 14, 
+      lineHeight: 20,
+      fontWeight: '500', 
+    },
     sectionLabel: {
       color: Colors.metaText,
       fontSize: 11,
-      fontWeight: '700',
+      fontWeight: '800',
       textTransform: 'uppercase',
-      letterSpacing: 1,
-      marginBottom: 8,
-      marginTop: 4,
+      letterSpacing: 1.2,
+      marginBottom: 10,
+      marginTop: 8,
+      marginLeft: 4,
     },
     linkRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
-      backgroundColor: Colors.surfaceVariant,
-      borderRadius: 10,
-      padding: 12,
-      marginBottom: 8,
-      borderWidth: 1,
+      gap: 14,
+      backgroundColor: Colors.surface,
+      borderRadius: DesignTokens.borderRadius.md,
+      padding: 14,
+      marginBottom: 10,
+      borderWidth: 1.5,
       borderColor: Colors.border,
     },
-    linkText: { flex: 1, color: Colors.onSurface, fontSize: 14 },
+    linkText: { 
+      flex: 1, 
+      color: Colors.onSurface, 
+      fontSize: 15,
+      fontWeight: '600',
+    },
     licenseTable: {
-      backgroundColor: Colors.surfaceVariant,
-      borderRadius: 12,
+      backgroundColor: Colors.surface,
+      borderRadius: DesignTokens.borderRadius.lg,
       overflow: 'hidden',
-      borderWidth: 1,
+      borderWidth: 1.5,
       borderColor: Colors.border,
-      marginBottom: 20,
+      marginBottom: 24,
     },
-    licenseRow: { flexDirection: 'row', justifyContent: 'space-between', padding: 12 },
-    licenseBorder: { borderBottomWidth: 1, borderBottomColor: Colors.border },
-    licenseName: { color: Colors.onSurface, fontSize: 13 },
-    licenseLabel: { color: Colors.metaText, fontSize: 13 },
-    footer: { color: Colors.metaText, fontSize: 12, textAlign: 'center', lineHeight: 18, marginTop: 8 },
+    licenseRow: { 
+      flexDirection: 'row', 
+      justifyContent: 'space-between', 
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+    },
+    licenseBorder: { 
+      borderBottomWidth: 1.5, 
+      borderBottomColor: Colors.border 
+    },
+    licenseName: { 
+      color: Colors.onSurface, 
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    licenseLabel: { 
+      color: Colors.metaText, 
+      fontSize: 13,
+      fontWeight: '700',
+    },
+    footer: { 
+      color: Colors.metaText, 
+      fontSize: 12, 
+      textAlign: 'center', 
+      lineHeight: 20, 
+      marginTop: 12,
+      fontWeight: '600',
+      opacity: 0.7,
+    },
   }), [Colors]);
 
   return (
@@ -129,13 +237,13 @@ export default function AppInfoScreen() {
           style={styles.headerBtn}
           onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         >
-          <MaterialCommunityIcons name="menu" size={24} color={Colors.onSurface} />
+          <MaterialCommunityIcons name="menu" size={22} color={Colors.onSurface} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>App Info</Text>
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
         {/* App identity */}
         <View style={styles.appBanner}>
           <View style={styles.appLogoWrap}>
@@ -200,8 +308,8 @@ export default function AppInfoScreen() {
         </View>
 
         <Text style={styles.footer}>
-          Built with ❤️ using llama.cpp for on-device AI inference.{'\n'}
-          KaviAI is open-source software.
+          Built with llama.cpp for on-device AI inference.{'\n'}
+          &copy; KAVI.ai 2026. All rights reserved.
         </Text>
       </ScrollView>
     </View>

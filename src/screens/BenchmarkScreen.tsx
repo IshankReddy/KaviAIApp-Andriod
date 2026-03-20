@@ -9,7 +9,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { modelStore } from '../stores/ModelStore';
 import { generateResponse } from '../services/LlamaService';
 import { chatStore } from '../stores/ChatStore';
-import { useTheme } from '../theme/theme';
+import { useTheme, DesignTokens } from '../theme/theme';
 
 const BENCHMARK_PROMPTS = [
   'Write a short poem about the moon.',
@@ -35,50 +35,66 @@ export default observer(function BenchmarkScreen() {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: Colors.surface,
+      paddingTop: Platform.OS === 'ios' ? 60 : 16,
+      paddingBottom: 14,
+      paddingHorizontal: 16,
       borderBottomWidth: 1,
       borderBottomColor: Colors.border,
-      paddingTop: Platform.OS === 'ios' ? 50 : 12,
-      paddingBottom: 10,
-      paddingHorizontal: 8,
+      zIndex: 10,
     },
-    headerBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20 },
-    headerTitle: { flex: 1, textAlign: 'center', color: Colors.onSurface, fontSize: 16, fontWeight: '600' },
+    headerBtn: {
+      width: 40,
+      height: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: DesignTokens.borderRadius.sm,
+    },
+    headerTitle: {
+      flex: 1,
+      textAlign: 'center',
+      color: Colors.onSurface,
+      fontSize: 17,
+      fontWeight: '800',
+      letterSpacing: -0.3,
+    },
     content: { padding: 16, paddingBottom: 40 },
     modelBanner: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
-      backgroundColor: Colors.surfaceVariant,
-      borderRadius: 10,
-      padding: 12,
+      gap: 10,
+      backgroundColor: Colors.surface,
+      borderRadius: DesignTokens.borderRadius.md,
+      padding: 14,
       marginBottom: 16,
       borderWidth: 1,
-      borderColor: Colors.primary + '44',
+      borderColor: Colors.primary + '30',
     },
-    modelBannerText: { color: Colors.onSurface, fontSize: 13, flex: 1 },
+    modelBannerText: { color: Colors.onSurface, fontSize: 14, fontWeight: '600', flex: 1 },
     noModelBanner: {
-      backgroundColor: Colors.surfaceVariant,
-      borderRadius: 10,
-      padding: 12,
+      backgroundColor: Colors.surface,
+      borderRadius: DesignTokens.borderRadius.md,
+      padding: 14,
       marginBottom: 16,
-      alignItems: 'center',
-    },
-    noModelText: { color: Colors.metaText, fontSize: 13 },
-    summaryRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
-    summaryCard: {
-      flex: 1,
-      backgroundColor: Colors.surfaceVariant,
-      borderRadius: 12,
-      padding: 12,
       alignItems: 'center',
       borderWidth: 1,
       borderColor: Colors.border,
     },
-    summaryValue: { color: Colors.primaryLight, fontSize: 18, fontWeight: '700' },
-    summaryLabel: { color: Colors.metaText, fontSize: 11, marginTop: 2 },
+    noModelText: { color: Colors.metaText, fontSize: 13, fontWeight: '500' },
+    summaryRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+    summaryCard: {
+      flex: 1,
+      backgroundColor: Colors.surface,
+      borderRadius: DesignTokens.borderRadius.md,
+      padding: 14,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: Colors.border,
+    },
+    summaryValue: { color: Colors.primaryLight, fontSize: 20, fontWeight: '800' },
+    summaryLabel: { color: Colors.metaText, fontSize: 10, fontWeight: '700', marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
     runBtn: {
       backgroundColor: Colors.primary,
-      borderRadius: 12,
+      borderRadius: DesignTokens.borderRadius.md,
       padding: 14,
       flexDirection: 'row',
       alignItems: 'center',
@@ -87,13 +103,13 @@ export default observer(function BenchmarkScreen() {
       marginBottom: 20,
     },
     runBtnDisabled: { backgroundColor: Colors.border },
-    runBtnText: { color: Colors.onPrimary, fontSize: 15, fontWeight: '600' },
+    runBtnText: { color: Colors.onPrimary, fontSize: 15, fontWeight: '700' },
     sectionLabel: {
       color: Colors.metaText,
       fontSize: 11,
-      fontWeight: '700',
+      fontWeight: '800',
       textTransform: 'uppercase',
-      letterSpacing: 1,
+      letterSpacing: 1.2,
       marginBottom: 10,
       marginTop: 4,
     },
@@ -101,29 +117,29 @@ export default observer(function BenchmarkScreen() {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      paddingVertical: 10,
-      paddingHorizontal: 12,
-      borderRadius: 8,
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+      borderRadius: DesignTokens.borderRadius.sm,
       marginBottom: 6,
-      backgroundColor: Colors.surfaceVariant,
+      backgroundColor: Colors.surface,
       borderWidth: 1,
       borderColor: Colors.border,
     },
     promptRowActive: { borderColor: Colors.primary },
     promptLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-    promptText: { color: Colors.onSurface, fontSize: 13, flex: 1 },
-    resultMini: { color: Colors.primaryLight, fontSize: 12, fontWeight: '600' },
+    promptText: { color: Colors.onSurface, fontSize: 13, fontWeight: '500', flex: 1 },
+    resultMini: { color: Colors.primaryLight, fontSize: 12, fontWeight: '700' },
     table: {
-      backgroundColor: Colors.surfaceVariant,
-      borderRadius: 10,
+      backgroundColor: Colors.surface,
+      borderRadius: DesignTokens.borderRadius.md,
       overflow: 'hidden',
       borderWidth: 1,
       borderColor: Colors.border,
     },
     tableRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: Colors.border },
-    tableHeader: { backgroundColor: Colors.surface },
-    tableCell: { flex: 1, padding: 10, color: Colors.onSurface, fontSize: 12 },
-    tableHeaderText: { color: Colors.metaText, fontWeight: '700', fontSize: 11, textTransform: 'uppercase' },
+    tableHeader: { backgroundColor: Colors.surfaceVariant },
+    tableCell: { flex: 1, padding: 10, color: Colors.onSurface, fontSize: 12, fontWeight: '500' },
+    tableHeaderText: { color: Colors.metaText, fontWeight: '800', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
   }), [Colors]);
   const navigation = useNavigation();
   const [running, setRunning] = useState(false);
@@ -136,7 +152,6 @@ export default observer(function BenchmarkScreen() {
     setRunning(true);
     setResults([]);
 
-    // Create a temporary conversation for benchmark
     if (modelStore.activeModel) {
       chatStore.createConversation(modelStore.activeModel.id);
     }
@@ -162,7 +177,6 @@ export default observer(function BenchmarkScreen() {
       }
     }
 
-    // Clean up temp conversation
     if (chatStore.activeConversation) {
       chatStore.deleteConversation(chatStore.activeConversation.id);
     }
@@ -181,20 +195,18 @@ export default observer(function BenchmarkScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.headerBtn}
           onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         >
-          <MaterialCommunityIcons name="menu" size={24} color={Colors.onSurface} />
+          <MaterialCommunityIcons name="menu" size={22} color={Colors.onSurface} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Benchmark</Text>
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* Model info */}
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
         {modelStore.activeModel ? (
           <View style={styles.modelBanner}>
             <MaterialCommunityIcons name="chip" size={18} color={Colors.primary} />
@@ -204,29 +216,27 @@ export default observer(function BenchmarkScreen() {
           </View>
         ) : (
           <View style={styles.noModelBanner}>
-            <Text style={styles.noModelText}>No model loaded. Go to Models screen to load one.</Text>
+            <Text style={styles.noModelText}>No model loaded. Load one from the Models screen.</Text>
           </View>
         )}
 
-        {/* Summary cards */}
         {results.length > 0 && (
           <View style={styles.summaryRow}>
             <View style={styles.summaryCard}>
-              <Text style={styles.summaryValue}>{avgTokensPerSec.toFixed(2)}</Text>
-              <Text style={styles.summaryLabel}>avg tokens/sec</Text>
+              <Text style={styles.summaryValue}>{avgTokensPerSec.toFixed(1)}</Text>
+              <Text style={styles.summaryLabel}>tokens/sec</Text>
             </View>
             <View style={styles.summaryCard}>
-              <Text style={styles.summaryValue}>{avgTTFT.toFixed(0)}ms</Text>
-              <Text style={styles.summaryLabel}>avg TTFT</Text>
+              <Text style={styles.summaryValue}>{avgTTFT.toFixed(0)}</Text>
+              <Text style={styles.summaryLabel}>avg TTFT (ms)</Text>
             </View>
             <View style={styles.summaryCard}>
               <Text style={styles.summaryValue}>{results.length}</Text>
-              <Text style={styles.summaryLabel}>prompts run</Text>
+              <Text style={styles.summaryLabel}>prompts</Text>
             </View>
           </View>
         )}
 
-        {/* Run button */}
         <TouchableOpacity
           style={[styles.runBtn, (!modelStore.isModelLoaded || running) && styles.runBtnDisabled]}
           onPress={handleRun}
@@ -241,14 +251,13 @@ export default observer(function BenchmarkScreen() {
             </>
           ) : (
             <>
-              <MaterialCommunityIcons name="play-circle-outline" size={20} color={Colors.onPrimary} />
+              <MaterialCommunityIcons name="play-circle-outline" size={18} color={Colors.onPrimary} />
               <Text style={styles.runBtnText}>Run Benchmark</Text>
             </>
           )}
         </TouchableOpacity>
 
-        {/* Prompt list */}
-        <Text style={styles.sectionLabel}>BENCHMARK PROMPTS</Text>
+        <Text style={styles.sectionLabel}>Benchmark Prompts</Text>
         {BENCHMARK_PROMPTS.map((p, i) => {
           const result = results[i];
           const isCurrent = running && i === currentPromptIdx;
@@ -258,9 +267,9 @@ export default observer(function BenchmarkScreen() {
                 {isCurrent ? (
                   <ActivityIndicator size="small" color={Colors.primary} />
                 ) : result ? (
-                  <MaterialCommunityIcons name="check-circle" size={18} color={Colors.primaryLight} />
+                  <MaterialCommunityIcons name="check-circle" size={16} color={Colors.success} />
                 ) : (
-                  <MaterialCommunityIcons name="circle-outline" size={18} color={Colors.border} />
+                  <MaterialCommunityIcons name="circle-outline" size={16} color={Colors.border} />
                 )}
                 <Text style={styles.promptText} numberOfLines={2}>{p}</Text>
               </View>
@@ -271,10 +280,9 @@ export default observer(function BenchmarkScreen() {
           );
         })}
 
-        {/* Detailed results table */}
         {results.length > 0 && (
           <>
-            <Text style={styles.sectionLabel}>DETAILED RESULTS</Text>
+            <Text style={[styles.sectionLabel, { marginTop: 16 }]}>Detailed Results</Text>
             <View style={styles.table}>
               <View style={[styles.tableRow, styles.tableHeader]}>
                 <Text style={[styles.tableCell, styles.tableHeaderText, { flex: 2 }]}>Prompt</Text>

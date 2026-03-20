@@ -4,7 +4,7 @@
  * Resolves redirects first so Android (which may not follow 302s) gets a direct CDN URL.
  */
 
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { runInAction } from 'mobx';
 import { modelStore, Model, CuratedModel, CURATED_MODELS } from '../stores/ModelStore';
 import { withToken, getGGUFFiles } from './HuggingFaceService';

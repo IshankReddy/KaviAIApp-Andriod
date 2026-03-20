@@ -1,6 +1,6 @@
 import React, { useRef, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, PanResponder, type ViewStyle } from 'react-native';
-import { useTheme } from '../theme/theme';
+import { View, Text, StyleSheet, PanResponder, Platform, type ViewStyle } from 'react-native';
+import { useTheme, DesignTokens } from '../theme/theme';
 
 interface Props {
   minValue: number;
@@ -86,27 +86,40 @@ export default function RangeSlider({
   const formatB = (v: number) => `${v.toFixed(decimals)}B`;
 
   const styles = useMemo(() => StyleSheet.create({
-    container: { marginBottom: 12 },
+    container: { marginBottom: 16 },
     trackWrap: { marginBottom: 4 },
-    labelsAbove: { position: 'relative' as const, height: 22, marginBottom: 2 },
+    labelsAbove: { position: 'relative' as const, height: 26, marginBottom: 8 },
     pillWrap: {
       position: 'absolute' as const,
       top: 0,
-      minWidth: 48,
+      minWidth: 52,
       paddingHorizontal: 8,
-      paddingVertical: 4,
-      backgroundColor: Colors.surfaceVariant,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: Colors.border,
+      paddingVertical: 5,
+      backgroundColor: Colors.primary,
+      borderRadius: DesignTokens.borderRadius.sm,
       alignItems: 'center',
       justifyContent: 'center',
+      ...Platform.select({
+        ios: {
+          shadowColor: Colors.primary,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.2,
+          shadowRadius: 4,
+        },
+        android: {
+          elevation: 3,
+        },
+      }),
     },
-    pillText: { color: Colors.onSurfaceVariant, fontSize: 11, fontWeight: '500' as const },
+    pillText: { 
+      color: Colors.onPrimary, 
+      fontSize: 11, 
+      fontWeight: '800' as const,
+    },
     track: {
-      height: 8,
+      height: 6,
       backgroundColor: Colors.border,
-      borderRadius: 4,
+      borderRadius: 3,
       position: 'relative' as const,
       overflow: 'visible' as const,
     },
@@ -115,26 +128,41 @@ export default function RangeSlider({
       top: 0,
       bottom: 0,
       backgroundColor: Colors.primary,
-      borderRadius: 4,
+      borderRadius: 3,
     },
     thumb: {
       position: 'absolute' as const,
-      top: -5,
-      width: 16,
-      height: 16,
-      borderRadius: 8,
-      backgroundColor: Colors.onSurface,
-      borderWidth: 1,
-      borderColor: Colors.border,
-      marginLeft: -8,
+      top: -9,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: Colors.surface,
+      borderWidth: 2,
+      borderColor: Colors.primary,
+      marginLeft: -12,
+      ...Platform.select({
+        ios: {
+          shadowColor: Colors.shadowColor,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.2,
+          shadowRadius: 3,
+        },
+        android: {
+          elevation: 4,
+        },
+      }),
     },
     trackLabels: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      marginTop: 4,
+      marginTop: 8,
       paddingHorizontal: 2,
     },
-    trackLabel: { color: Colors.metaText, fontSize: 11 },
+    trackLabel: { 
+      color: Colors.metaText, 
+      fontSize: 11,
+      fontWeight: '700',
+    },
   }), [Colors]);
 
   return (

@@ -3,9 +3,8 @@ import { settingsStore } from '../stores/SettingsStore';
 import type { Message } from '../stores/ChatStore';
 
 function toChatMessages(messages: Message[]) {
-  // Cloud providers typically want just role/content.
   return messages
-    .filter((m) => m.role === 'user' || m.role === 'assistant')
+    .filter((m) => (m.role === 'user' || m.role === 'assistant') && m.content.trim().length > 0)
     .map((m) => ({ role: m.role, content: m.content }));
 }
 
@@ -46,7 +45,7 @@ export async function generateCloudResponse(systemPrompt: string, messages: Mess
       },
       body: JSON.stringify({
         model,
-        max_tokens: 1024,
+        max_tokens: 4096,
         system: systemPrompt,
         messages: chatMessages.map((m) => ({ role: m.role, content: [{ type: 'text', text: m.content }] })),
       }),

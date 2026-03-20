@@ -11,7 +11,7 @@ import { chatStore } from '../stores/ChatStore';
 import { modelStore } from '../stores/ModelStore';
 import { getModelsDirectorySize, deleteModelFile, syncInstalledModelsFromDevice } from '../services/DownloadService';
 import { releaseModel } from '../services/LlamaService';
-import { useTheme } from '../theme/theme';
+import { useTheme, DesignTokens } from '../theme/theme';
 import SettingsSlider from '../components/SettingsSlider';
 import { authStore } from '../stores/AuthStore';
 import { secretsStore } from '../stores/SecretsStore';
@@ -36,125 +36,254 @@ export default observer(function SettingsScreen() {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: Colors.surface,
+      paddingTop: Platform.OS === 'ios' ? 60 : 16,
+      paddingBottom: 14,
+      paddingHorizontal: 16,
       borderBottomWidth: 1,
       borderBottomColor: Colors.border,
-      paddingTop: Platform.OS === 'ios' ? 50 : 12,
-      paddingBottom: 10,
-      paddingHorizontal: 8,
+      zIndex: 10,
     },
-    headerBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20 },
-    headerTitle: { flex: 1, textAlign: 'center', color: Colors.onSurface, fontSize: 16, fontWeight: '600' },
-    content: { padding: 16 },
+    headerBtn: { 
+      width: 40, 
+      height: 40, 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      borderRadius: DesignTokens.borderRadius.sm,
+    },
+    headerTitle: { 
+      flex: 1, 
+      textAlign: 'center', 
+      color: Colors.onSurface, 
+      fontSize: 17, 
+      fontWeight: '800',
+      letterSpacing: -0.3,
+    },
+    content: { 
+      padding: DesignTokens.spacing.md,
+      paddingBottom: 40,
+    },
     sectionLabel: {
       color: Colors.metaText,
       fontSize: 11,
-      fontWeight: '600',
+      fontWeight: '900',
       textTransform: 'uppercase',
-      letterSpacing: 1,
-      marginTop: 20,
-      marginBottom: 8,
+      letterSpacing: 1.5,
+      marginTop: 28,
+      marginBottom: 12,
       marginLeft: 4,
     },
     presetBtn: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
-      backgroundColor: Colors.surfaceVariant,
-      borderRadius: 12,
-      padding: 14,
-      borderWidth: 1,
+      gap: 14,
+      backgroundColor: Colors.surface,
+      borderRadius: DesignTokens.borderRadius.lg,
+      padding: 18,
+      borderWidth: 1.5,
       borderColor: Colors.border,
-      marginBottom: 8,
+      marginBottom: 12,
+      ...Platform.select({
+        ios: {
+          shadowColor: Colors.shadowColor,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.04,
+          shadowRadius: 8,
+        },
+        android: {
+          elevation: 2,
+        },
+      }),
     },
     presetTextWrap: { flex: 1 },
-    presetLabel: { color: Colors.onSurface, fontSize: 14, fontWeight: '500' },
-    presetMeta: { color: Colors.metaText, fontSize: 12, marginTop: 2 },
+    presetLabel: { 
+      color: Colors.onSurface, 
+      fontSize: 16, 
+      fontWeight: '800',
+      letterSpacing: -0.3,
+    },
+    presetMeta: { 
+      color: Colors.onSurfaceVariant, 
+      fontSize: 13, 
+      marginTop: 4,
+      fontWeight: '500',
+      lineHeight: 18,
+    },
     row: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      backgroundColor: Colors.surfaceVariant,
-      borderRadius: 12,
-      padding: 14,
-      borderWidth: 1,
-      borderColor: Colors.border,
-      marginBottom: 8,
-    },
-    rowLabel: { color: Colors.onSurface, fontSize: 14 },
-    rowValue: { color: Colors.primaryLight, fontSize: 14, fontWeight: '600' },
-    settingBlock: {
-      backgroundColor: Colors.surfaceVariant,
-      borderRadius: 12,
-      padding: 14,
-      borderWidth: 1,
-      borderColor: Colors.border,
-      marginBottom: 8,
-    },
-    settingLabel: { color: Colors.onSurface, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
-    settingHint: { color: Colors.metaText, fontSize: 12, marginVertical: 4, marginBottom: 10, lineHeight: 16 },
-    tokenInput: {
       backgroundColor: Colors.surface,
-      borderRadius: 8,
-      padding: 12,
-      color: Colors.onSurface,
-      fontSize: 14,
-      borderWidth: 1,
+      borderRadius: DesignTokens.borderRadius.lg,
+      padding: 18,
+      borderWidth: 1.5,
       borderColor: Colors.border,
+      marginBottom: 12,
+      ...Platform.select({
+        ios: {
+          shadowColor: Colors.shadowColor,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.03,
+          shadowRadius: 6,
+        },
+        android: {
+          elevation: 1,
+        },
+      }),
+    },
+    rowLabel: { 
+      color: Colors.onSurface, 
+      fontSize: 16,
+      fontWeight: '700',
+      letterSpacing: -0.2,
+    },
+    rowValue: { 
+      color: Colors.primary, 
+      fontSize: 16, 
+      fontWeight: '800' 
+    },
+    settingBlock: {
+      backgroundColor: Colors.surface,
+      borderRadius: DesignTokens.borderRadius.lg,
+      padding: 18,
+      borderWidth: 1.5,
+      borderColor: Colors.border,
+      marginBottom: 14,
+      ...Platform.select({
+        ios: {
+          shadowColor: Colors.shadowColor,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.03,
+          shadowRadius: 6,
+        },
+        android: {
+          elevation: 1,
+        },
+      }),
+    },
+    settingLabel: { 
+      color: Colors.onSurface, 
+      fontSize: 12, 
+      fontWeight: '800', 
+      textTransform: 'uppercase', 
+      letterSpacing: 0.8 
+    },
+    settingHint: { 
+      color: Colors.onSurfaceVariant, 
+      fontSize: 13, 
+      marginVertical: 6, 
+      marginBottom: 12, 
+      lineHeight: 18,
+      fontWeight: '500',
+    },
+    tokenInput: {
+      backgroundColor: Colors.background,
+      borderRadius: DesignTokens.borderRadius.md,
+      padding: 14,
+      color: Colors.onSurface,
+      fontSize: 15,
+      borderWidth: 1.5,
+      borderColor: Colors.border,
+      fontWeight: '500',
     },
     dangerRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
-      backgroundColor: Colors.surfaceVariant,
-      borderRadius: 12,
-      padding: 14,
-      borderWidth: 1,
-      borderColor: Colors.error + '44',
-      marginBottom: 8,
+      backgroundColor: Colors.error + '08',
+      borderRadius: DesignTokens.borderRadius.lg,
+      padding: 16,
+      borderWidth: 1.5,
+      borderColor: Colors.error + '22',
+      marginBottom: 10,
     },
-    dangerLabel: { color: Colors.error, fontSize: 14 },
+    dangerLabel: { 
+      color: Colors.error, 
+      fontSize: 15, 
+      fontWeight: '700' 
+    },
     modal: { flex: 1, backgroundColor: Colors.background },
     modalHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      padding: 16,
+      paddingHorizontal: 16,
+      paddingVertical: 16,
       paddingTop: Platform.OS === 'ios' ? 52 : 16,
       borderBottomWidth: 1,
       borderBottomColor: Colors.border,
+      backgroundColor: Colors.surface,
     },
-    modalTitle: { color: Colors.onSurface, fontSize: 16, fontWeight: '600' },
+    modalTitle: { 
+      color: Colors.onSurface, 
+      fontSize: 18, 
+      fontWeight: '700',
+      letterSpacing: -0.2,
+    },
     modalContent: { padding: 16 },
     numInput: {
-      backgroundColor: Colors.surfaceVariant,
-      borderRadius: 8,
-      padding: 12,
+      backgroundColor: Colors.surface,
+      borderRadius: DesignTokens.borderRadius.md,
+      padding: 14,
       color: Colors.onSurface,
-      fontSize: 15,
-      borderWidth: 1,
+      fontSize: 16,
+      borderWidth: 1.5,
       borderColor: Colors.border,
-      marginBottom: 20,
+      marginBottom: 24,
+      fontWeight: '600',
     },
-    toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 },
+    toggleRow: { 
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      gap: 16, 
+      marginBottom: 24 
+    },
     modalFooter: {
       flexDirection: 'row',
       gap: 12,
       padding: 16,
       borderTopWidth: 1,
       borderTopColor: Colors.border,
-      paddingBottom: Platform.OS === 'ios' ? 32 : 16,
+      paddingBottom: Platform.OS === 'ios' ? 36 : 16,
+      backgroundColor: Colors.surface,
     },
-    resetBtn: { flex: 1, padding: 14, alignItems: 'center', justifyContent: 'center' },
-    resetText: { color: Colors.onSurfaceVariant, fontSize: 14 },
+    resetBtn: { 
+      flex: 1, 
+      height: 50, 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      borderRadius: DesignTokens.borderRadius.md,
+      borderWidth: 1.5,
+      borderColor: Colors.border,
+    },
+    resetText: { 
+      color: Colors.onSurfaceVariant, 
+      fontSize: 14,
+      fontWeight: '700',
+    },
     saveBtn: {
       flex: 1,
+      height: 50,
       backgroundColor: Colors.primary,
-      borderRadius: 10,
-      padding: 14,
+      borderRadius: DesignTokens.borderRadius.md,
       alignItems: 'center',
       justifyContent: 'center',
+      ...Platform.select({
+        ios: {
+          shadowColor: Colors.primary,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.2,
+          shadowRadius: 8,
+        },
+        android: {
+          elevation: 4,
+        },
+      }),
     },
-    saveText: { color: Colors.onPrimary, fontSize: 14, fontWeight: '600' },
+    saveText: { 
+      color: Colors.onPrimary, 
+      fontSize: 15, 
+      fontWeight: '700' 
+    },
   }), [Colors]);
 
   const refreshStorage = async () => {
@@ -217,13 +346,13 @@ export default observer(function SettingsScreen() {
           style={styles.headerBtn}
           onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         >
-          <MaterialCommunityIcons name="menu" size={24} color={Colors.onSurface} />
+          <MaterialCommunityIcons name="menu" size={22} color={Colors.onSurface} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Settings</Text>
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
         <Text style={styles.sectionLabel}>ACCOUNT</Text>
         <View style={styles.settingBlock}>
           <Text style={styles.settingLabel}>Signed in as</Text>

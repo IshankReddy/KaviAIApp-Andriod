@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useTheme } from '../theme/theme';
+import { useTheme, DesignTokens } from '../theme/theme';
+import { Platform } from 'react-native';
 
 interface Props {
   label: string;
@@ -19,24 +20,40 @@ export default function SettingsSlider({
   const pct = ((value - min) / (max - min)) * 100;
   const styles = useMemo(() => StyleSheet.create({
     container: { marginBottom: 20 },
-    labelRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-    label: { color: Colors.onSurface, fontSize: 14, fontWeight: '500' },
-    value: { color: Colors.primaryLight, fontSize: 14, fontWeight: '600' },
-    controls: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    labelRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, paddingHorizontal: 4 },
+    label: { 
+      color: Colors.onSurface, 
+      fontSize: 14, 
+      fontWeight: '700',
+      letterSpacing: -0.2,
+    },
+    value: { 
+      color: Colors.primary, 
+      fontSize: 14, 
+      fontWeight: '800' 
+    },
+    controls: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     btn: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
+      width: 36,
+      height: 36,
+      borderRadius: DesignTokens.borderRadius.sm,
       backgroundColor: Colors.surfaceVariant,
       alignItems: 'center',
       justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: Colors.border,
     },
-    btnText: { color: Colors.onSurface, fontSize: 18, lineHeight: 22 },
+    btnText: { 
+      color: Colors.onSurface, 
+      fontSize: 20, 
+      lineHeight: 24,
+      fontWeight: '600',
+    },
     track: {
       flex: 1,
-      height: 4,
+      height: 6,
       backgroundColor: Colors.border,
-      borderRadius: 2,
+      borderRadius: 3,
       position: 'relative',
       overflow: 'visible',
     },
@@ -44,18 +61,31 @@ export default function SettingsSlider({
       position: 'absolute',
       left: 0,
       top: 0,
-      height: 4,
+      height: 6,
       backgroundColor: Colors.primary,
-      borderRadius: 2,
+      borderRadius: 3,
     },
     thumb: {
       position: 'absolute',
       top: -8,
-      width: 20,
-      height: 20,
-      borderRadius: 10,
-      backgroundColor: Colors.onSurface,
-      marginLeft: -10,
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      backgroundColor: Colors.surface,
+      borderWidth: 2,
+      borderColor: Colors.primary,
+      marginLeft: -11,
+      ...Platform.select({
+        ios: {
+          shadowColor: Colors.shadowColor,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.2,
+          shadowRadius: 3,
+        },
+        android: {
+          elevation: 4,
+        },
+      }),
     },
   }), [Colors]);
 

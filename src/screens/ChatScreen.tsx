@@ -10,19 +10,25 @@ import { chatStore } from '../stores/ChatStore';
 import { modelStore } from '../stores/ModelStore';
 import { settingsStore } from '../stores/SettingsStore';
 import { palStore } from '../stores/PalStore';
-import { generateResponse, stopGeneration } from '../services/LlamaService';
+import { generateResponse, stopGeneration, initModel, isRunningInExpoGo, LLAMA_UNAVAILABLE_MESSAGE } from '../services/LlamaService';
 import { generateCloudResponse } from '../services/CloudChatService';
 import MessageBubble from '../components/MessageBubble';
 import ChatInput from '../components/ChatInput';
-import { useTheme } from '../theme/theme';
+import { useTheme, DesignTokens } from '../theme/theme';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const LOGO = require('../../assets/logo.png');
 
-/** e.g. "Qwen2.5-1.5B-Instruct" -> "Qwen", "DeepSeek-R1-Distill" -> "DeepSeek". */
 function shortModelName(displayName: string): string {
   const match = displayName.match(/^([A-Za-z]+)/);
   return match ? match[1] : displayName.slice(0, 12);
 }
+
+const CAPABILITIES = [
+  { icon: 'shield-lock-outline' as const, title: 'Private', desc: 'All data stays on device' },
+  { icon: 'wifi-off' as const,            title: 'Offline', desc: 'No internet required' },
+  { icon: 'lightning-bolt' as const,       title: 'Fast',    desc: 'GPU-accelerated inference' },
+];
 
 export default observer(function ChatScreen() {
   const { Colors } = useTheme();
@@ -34,58 +40,182 @@ export default observer(function ChatScreen() {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: Colors.surface,
+      paddingTop: Platform.OS === 'ios' ? 60 : 16,
+      paddingBottom: 14,
+      paddingHorizontal: 16,
       borderBottomWidth: 1,
       borderBottomColor: Colors.border,
-      paddingTop: Platform.OS === 'ios' ? 50 : 12,
-      paddingBottom: 10,
-      paddingHorizontal: 8,
+      zIndex: 10,
     },
-    headerBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20 },
+    headerBtn: { 
+      width: 40, 
+      height: 40, 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      borderRadius: DesignTokens.borderRadius.sm,
+    },
     headerCenter: { flex: 1, alignItems: 'center' },
-    headerTitle: { color: Colors.onSurface, fontSize: 16, fontWeight: '600' },
-    headerSubtitle: { color: Colors.metaText, fontSize: 12, marginTop: 1 },
-    headerActions: { flexDirection: 'row' },
-    emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+    headerTitle: { 
+      color: Colors.onSurface, 
+      fontSize: 17, 
+      fontWeight: '800',
+      letterSpacing: -0.3,
+    },
+    headerSubtitle: { 
+      color: Colors.primary, 
+      fontSize: 10, 
+      marginTop: 2,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      letterSpacing: 1.5,
+    },
+    headerActions: { flexDirection: 'row', gap: 4 },
+
+    emptyState: { 
+      flex: 1, 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      paddingHorizontal: 28,
+    },
     logoWrap: {
-      width: 120,
-      height: 120,
-      borderRadius: 60,
-      backgroundColor: Colors.surfaceVariant,
+      width: 150,
+      height: 150,
+      borderRadius: 75,
+      backgroundColor: Colors.surface,
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: 24,
-      overflow: 'hidden' as const,
+      borderWidth: 2,
+      borderColor: Colors.primary + '25',
+      ...Platform.select({
+        ios: {
+          shadowColor: Colors.primary,
+          shadowOffset: { width: 0, height: 12 },
+          shadowOpacity: 0.2,
+          shadowRadius: 20,
+        },
+        android: { elevation: 10 },
+      }),
     },
-    logo: { width: 88, height: 88 },
-    emptyTitle: { color: Colors.onSurface, fontSize: 20, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
-    emptySubtitle: { color: Colors.metaText, fontSize: 15, textAlign: 'center', lineHeight: 22, marginBottom: 28 },
-    downloadBtn: {
-      backgroundColor: Colors.surfaceVariant,
-      borderRadius: 24,
-      paddingHorizontal: 28,
-      paddingVertical: 14,
+    logo: { width: 90, height: 90 },
+    emptyTitle: { 
+      color: Colors.onSurface, 
+      fontSize: 26, 
+      fontWeight: '900', 
+      marginBottom: 8, 
+      textAlign: 'center',
+      letterSpacing: -0.8,
+    },
+    emptySubtitle: { 
+      color: Colors.onSurfaceVariant, 
+      fontSize: 14, 
+      textAlign: 'center', 
+      lineHeight: 21, 
+      marginBottom: 28,
+      fontWeight: '500',
+    },
+    capsRow: {
+      flexDirection: 'row',
+      gap: 10,
+      width: '100%',
+      marginBottom: 28,
+    },
+    capCard: {
+      flex: 1,
+      alignItems: 'center',
+      paddingVertical: 16,
+      paddingHorizontal: 6,
+      borderRadius: DesignTokens.borderRadius.md,
+      backgroundColor: Colors.surface,
       borderWidth: 1,
       borderColor: Colors.border,
     },
-    downloadBtnText: { color: Colors.onSurface, fontSize: 15, fontWeight: '500' },
+    capIconWrap: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: Colors.primary + '15',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 8,
+    },
+    capTitle: {
+      color: Colors.onSurface,
+      fontSize: 12,
+      fontWeight: '800',
+      marginBottom: 2,
+    },
+    capDesc: {
+      color: Colors.onSurfaceVariant,
+      fontSize: 10,
+      fontWeight: '500',
+      textAlign: 'center',
+    },
+    downloadBtn: {
+      flexDirection: 'row',
+      borderRadius: DesignTokens.borderRadius.lg,
+      paddingHorizontal: 32,
+      paddingVertical: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 10,
+      overflow: 'hidden',
+    },
+    downloadBtnText: { 
+      color: Colors.onPrimary, 
+      fontSize: 15, 
+      fontWeight: '800',
+      letterSpacing: -0.2,
+    },
+    copyright: {
+      color: Colors.metaText,
+      fontSize: 10,
+      fontWeight: '600',
+      marginTop: 20,
+      letterSpacing: 0.5,
+      opacity: 0.6,
+    },
+
     chatArea: { flex: 1 },
-    messageList: { paddingVertical: 8, paddingBottom: 4 },
+    messageList: { 
+      paddingVertical: DesignTokens.spacing.sm, 
+      paddingBottom: DesignTokens.spacing.xl,
+    },
     loadingBar: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 8,
-      paddingVertical: 8,
+      gap: 10,
+      paddingVertical: 10,
       backgroundColor: Colors.surfaceVariant,
+      marginHorizontal: 16,
+      marginBottom: 8,
+      borderRadius: DesignTokens.borderRadius.sm,
     },
-    loadingText: { color: Colors.onSurfaceVariant, fontSize: 13 },
+    loadingText: { 
+      color: Colors.onSurfaceVariant, 
+      fontSize: 13, 
+      fontWeight: '600' 
+    },
     notLoadedBar: {
-      backgroundColor: Colors.surfaceVariant,
-      paddingVertical: 8,
+      flexDirection: 'row',
+      backgroundColor: Colors.primary + '10',
+      paddingVertical: 12,
       paddingHorizontal: 16,
       alignItems: 'center',
+      gap: 10,
+      marginHorizontal: 16,
+      marginBottom: 8,
+      borderRadius: DesignTokens.borderRadius.sm,
+      borderWidth: 1,
+      borderColor: Colors.primary + '25',
     },
-    notLoadedText: { color: Colors.metaText, fontSize: 13 },
+    notLoadedText: { 
+      color: Colors.primary, 
+      fontSize: 13, 
+      fontWeight: '700',
+      flex: 1,
+    },
   }), [Colors]);
 
   const hasModels = modelStore.hasModels;
@@ -94,35 +224,50 @@ export default observer(function ChatScreen() {
   const messages = chatStore.messages;
   const activeConv = chatStore.activeConversation;
 
-  // Auto-scroll on new tokens
   useEffect(() => {
     if (messages.length > 0) {
       setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 50);
     }
   }, [messages.length, chatStore.streamingContent]);
 
-  // Create a conversation if none exists and model is loaded
+  const isCloudBackend = settingsStore.app.chatBackend !== 'local';
+
   useEffect(() => {
-    if (isModelLoaded && modelStore.activeModel && !activeConv) {
-      chatStore.createConversation(modelStore.activeModel.id);
+    if (!activeConv) {
+      if (isCloudBackend) {
+        chatStore.createConversation(`cloud-${settingsStore.app.chatBackend}`);
+      } else if (isModelLoaded && modelStore.activeModel) {
+        chatStore.createConversation(modelStore.activeModel.id);
+      }
     }
-  }, [isModelLoaded, modelStore.activeModel]);
+  }, [isModelLoaded, modelStore.activeModel, isCloudBackend, activeConv]);
 
   const handleSend = async (text: string) => {
     const backend = settingsStore.app.chatBackend;
-    const needsLocal = backend === 'local';
-    if (needsLocal && !isModelLoaded) return;
+    if (backend === 'local' && !isModelLoaded) return;
+
+    if (!chatStore.activeConversation) {
+      const mid = backend === 'local'
+        ? (modelStore.activeModel?.id ?? '')
+        : `cloud-${backend}`;
+      if (!mid) return;
+      chatStore.createConversation(mid);
+    }
+
     chatStore.addUserMessage(text);
-    const activePal = activeConv?.palId ? palStore.getPal(activeConv.palId) : null;
+    const conv = chatStore.activeConversation;
+    const activePal = conv?.palId ? palStore.getPal(conv.palId) : null;
     const systemPrompt = activePal?.systemPrompt ?? 'You are a helpful AI assistant.';
+
     if (backend === 'local') {
       await generateResponse(systemPrompt);
       return;
     }
 
+    const historyForApi = [...chatStore.messages];
     chatStore.startAssistantMessage();
     try {
-      const reply = await generateCloudResponse(systemPrompt, chatStore.messages);
+      const reply = await generateCloudResponse(systemPrompt, historyForApi);
       chatStore.appendToken(reply);
     } catch (e: any) {
       const msg = e?.message ? String(e.message) : 'Request failed';
@@ -137,44 +282,40 @@ export default observer(function ChatScreen() {
     return activeConv.title.length > 0 ? activeConv.title : 'Chat';
   })();
 
-  const headerSubtitle =
-    settingsStore.app.chatBackend === 'local'
-      ? (modelStore.activeModel?.displayName ?? '')
-      : `Cloud: ${settingsStore.app.chatBackend}`;
+  const headerSubtitle = (() => {
+    const backend = settingsStore.app.chatBackend;
+    if (backend === 'local') return modelStore.activeModel?.displayName ?? '';
+    if (backend === 'openai') return settingsStore.app.openaiModel;
+    if (backend === 'anthropic') return settingsStore.app.anthropicModel;
+    if (backend === 'gemini') return settingsStore.app.geminiModel;
+    return '';
+  })();
 
   const inputDisabled = settingsStore.app.chatBackend === 'local'
     ? (!isModelLoaded || isGenerating)
     : isGenerating;
+
+  const getConversationModelId = () => {
+    if (isCloudBackend) return `cloud-${settingsStore.app.chatBackend}`;
+    return modelStore.activeModel?.id ?? '';
+  };
 
   const handleChatMenu = () => {
     if (activeConv) {
       Alert.alert('Chat', undefined, [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'New Chat',
-          onPress: () => {
-            if (modelStore.activeModel) {
-              chatStore.createConversation(modelStore.activeModel.id);
-            }
-          },
-        },
-        {
           text: 'Clear Conversation',
           style: 'destructive',
           onPress: () => {
             if (activeConv) {
               chatStore.deleteConversation(activeConv.id);
-              if (modelStore.activeModel) {
-                chatStore.createConversation(modelStore.activeModel.id);
-              }
+              const mid = getConversationModelId();
+              if (mid) chatStore.createConversation(mid);
             }
           },
         },
       ]);
-    } else {
-      if (modelStore.activeModel) {
-        chatStore.createConversation(modelStore.activeModel.id);
-      }
     }
   };
 
@@ -186,7 +327,7 @@ export default observer(function ChatScreen() {
           style={styles.headerBtn}
           onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         >
-          <MaterialCommunityIcons name="menu" size={24} color={Colors.onSurface} />
+          <MaterialCommunityIcons name="menu" size={22} color={Colors.onSurface} />
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
@@ -200,38 +341,62 @@ export default observer(function ChatScreen() {
           <TouchableOpacity
             style={styles.headerBtn}
             onPress={() => {
-              if (modelStore.activeModel) {
-                chatStore.createConversation(modelStore.activeModel.id);
-              }
+              const mid = getConversationModelId();
+              if (mid) chatStore.createConversation(mid);
             }}
           >
-            <MaterialCommunityIcons name="square-edit-outline" size={22} color={Colors.onSurface} />
+            <MaterialCommunityIcons name="square-edit-outline" size={20} color={Colors.onSurface} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerBtn} onPress={handleChatMenu}>
-            <MaterialCommunityIcons name="dots-vertical" size={22} color={Colors.onSurface} />
-          </TouchableOpacity>
+          {activeConv && (
+            <TouchableOpacity style={styles.headerBtn} onPress={handleChatMenu}>
+              <MaterialCommunityIcons name="dots-vertical" size={20} color={Colors.onSurface} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
-      {/* Empty state — no models installed */}
-      {!hasModels ? (
+      {/* Empty state */}
+      {!hasModels && !isCloudBackend ? (
         <View style={styles.emptyState}>
           <View style={styles.logoWrap}>
             <Image source={LOGO} style={styles.logo} resizeMode="contain" />
           </View>
-          <Text style={styles.emptyTitle}>No Models Available</Text>
+          <Text style={styles.emptyTitle}>Welcome to KaviAI</Text>
           <Text style={styles.emptySubtitle}>
-            Download a model to start chatting with KaviAI
+            Run AI models privately on your device.{'\n'}No cloud, no data leaves your phone.
           </Text>
+
+          <View style={styles.capsRow}>
+            {CAPABILITIES.map((c, i) => (
+              <View key={i} style={styles.capCard}>
+                <View style={styles.capIconWrap}>
+                  <MaterialCommunityIcons name={c.icon} size={18} color={Colors.primary} />
+                </View>
+                <Text style={styles.capTitle}>{c.title}</Text>
+                <Text style={styles.capDesc}>{c.desc}</Text>
+              </View>
+            ))}
+          </View>
+
           <TouchableOpacity
-            style={styles.downloadBtn}
             onPress={() => (navigation as any).navigate('Models')}
+            activeOpacity={0.8}
+            style={{ borderRadius: DesignTokens.borderRadius.lg, overflow: 'hidden' }}
           >
-            <Text style={styles.downloadBtnText}>Download Model</Text>
+            <LinearGradient
+              colors={Colors.primaryGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.downloadBtn}
+            >
+              <MaterialCommunityIcons name="download" size={18} color={Colors.onPrimary} />
+              <Text style={styles.downloadBtnText}>Browse & Download Models</Text>
+            </LinearGradient>
           </TouchableOpacity>
+
+          <Text style={styles.copyright}>&copy; KAVI.ai 2026</Text>
         </View>
       ) : (
-        /* Chat area */
         <KeyboardAvoidingView
           style={styles.chatArea}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -239,6 +404,7 @@ export default observer(function ChatScreen() {
         >
           <FlatList
             ref={flatRef}
+            style={{ flex: 1 }}
             data={messages}
             keyExtractor={m => m.id}
             renderItem={({ item }) => <MessageBubble message={item} />}
@@ -246,7 +412,6 @@ export default observer(function ChatScreen() {
             showsVerticalScrollIndicator={false}
           />
 
-          {/* Loading model indicator */}
           {modelStore.isLoadingModel && (
             <View style={styles.loadingBar}>
               <ActivityIndicator size="small" color={Colors.primary} />
@@ -254,16 +419,41 @@ export default observer(function ChatScreen() {
             </View>
           )}
 
-          {/* Model not loaded bar */}
-          {!isModelLoaded && !modelStore.isLoadingModel && hasModels && (
-            <View style={styles.notLoadedBar}>
+          {!isModelLoaded && !modelStore.isLoadingModel && hasModels && settingsStore.app.chatBackend === 'local' && (
+            <TouchableOpacity
+              style={styles.notLoadedBar}
+              activeOpacity={0.7}
+              onPress={async () => {
+                const model = modelStore.activeModel;
+                if (!model) {
+                  const first = modelStore.installedModels[0];
+                  if (first) {
+                    modelStore.setActiveModel(first);
+                    const result = await initModel(first.filePath);
+                    if (!result.success) {
+                      Alert.alert('Load Failed', result.errorMessage ?? 'Could not load model.');
+                      modelStore.setActiveModel(null);
+                    }
+                  } else {
+                    (navigation as any).navigate('Models');
+                  }
+                  return;
+                }
+                const result = await initModel(model.filePath);
+                if (!result.success) {
+                  const message = result.errorMessage ?? (isRunningInExpoGo() ? LLAMA_UNAVAILABLE_MESSAGE : 'Could not load model.');
+                  Alert.alert('Load Failed', message);
+                  modelStore.setActiveModel(null);
+                }
+              }}
+            >
+              <MaterialCommunityIcons name="play-circle-outline" size={18} color={Colors.primary} />
               <Text style={styles.notLoadedText}>
-                Model not loaded. Please initialize the model.
+                Tap to load {modelStore.activeModel?.displayName ?? 'a model'}
               </Text>
-            </View>
+            </TouchableOpacity>
           )}
 
-          {/* Input */}
           <ChatInput
             onSend={handleSend}
             disabled={inputDisabled}

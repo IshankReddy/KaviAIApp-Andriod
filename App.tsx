@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { AppState, AppStateStatus, Linking, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
@@ -12,8 +12,10 @@ import { authStore } from './src/stores/AuthStore';
 import { secretsStore } from './src/stores/SecretsStore';
 import { observer } from 'mobx-react-lite';
 import RootNavigator from './src/navigation/RootNavigator';
+import SplashOverlay from './src/components/SplashOverlay';
 
 const AppContent = observer(function AppContent() {
+  const [splashDone, setSplashDone] = useState(false);
   useEffect(() => {
     let cancelled = false;
     let t: ReturnType<typeof setTimeout> | null = null;
@@ -73,6 +75,7 @@ const AppContent = observer(function AppContent() {
       <NavigationContainer theme={NavTheme}>
         <StatusBar style={dark ? 'light' : 'dark'} backgroundColor="transparent" translucent />
         <RootNavigator />
+        {!splashDone && <SplashOverlay onFinish={() => setSplashDone(true)} />}
       </NavigationContainer>
     </PaperProvider>
   );

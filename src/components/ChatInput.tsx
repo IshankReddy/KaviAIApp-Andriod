@@ -3,7 +3,7 @@ import {
   View, TextInput, TouchableOpacity, StyleSheet, Platform,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useTheme } from '../theme/theme';
+import { useTheme, DesignTokens } from '../theme/theme';
 
 interface Props {
   onSend: (text: string) => void;
@@ -19,55 +19,72 @@ export default function ChatInput({ onSend, disabled, placeholder, onPlusPress, 
   const { Colors } = useTheme();
   const [text, setText] = useState('');
   const [expanded, setExpanded] = useState(false);
+  
   const styles = useMemo(() => StyleSheet.create({
     container: {
       backgroundColor: Colors.surface,
-      borderTopWidth: 1,
+      borderTopWidth: 1.5,
       borderTopColor: Colors.border,
-      paddingHorizontal: 8,
-      paddingVertical: 8,
-      paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+      paddingHorizontal: 12,
+      paddingTop: 10,
+      paddingBottom: Platform.OS === 'ios' ? 36 : 12,
+      ...Platform.select({
+        ios: {
+          shadowColor: Colors.shadowColor,
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.04,
+          shadowRadius: 8,
+        },
+        android: {
+          elevation: 4,
+        },
+      }),
     },
     bar: {
       flexDirection: 'row',
       alignItems: 'flex-end',
-      backgroundColor: Colors.inputBackground,
-      borderRadius: 24,
-      borderWidth: 1,
+      backgroundColor: Colors.background,
+      borderRadius: DesignTokens.borderRadius.xl,
+      borderWidth: 1.5,
       borderColor: Colors.border,
-      paddingHorizontal: 4,
-      paddingVertical: 4,
+      paddingHorizontal: 6,
+      paddingVertical: 6,
     },
-    iconBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 18 },
+    iconBtn: { 
+      width: 38, 
+      height: 38, 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      borderRadius: DesignTokens.borderRadius.sm,
+    },
     input: {
       flex: 1,
       color: Colors.onSurface,
-      fontSize: 15,
-      paddingHorizontal: 8,
+      fontSize: 16,
+      fontWeight: '500',
+      paddingHorizontal: 10,
       paddingVertical: 10,
       maxHeight: 120,
       textAlign: 'left',
       textAlignVertical: 'center',
     },
     inputExpanded: { minHeight: 80 },
-    sendBtn: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: Colors.primary,
+    actionBtn: {
+      width: 38,
+      height: 38,
+      borderRadius: DesignTokens.borderRadius.sm,
       alignItems: 'center',
       justifyContent: 'center',
-      marginLeft: 2,
+      marginLeft: 4,
     },
-    sendBtnDisabled: { backgroundColor: Colors.border },
+    sendBtn: {
+      backgroundColor: Colors.primary,
+    },
+    sendBtnDisabled: { 
+      backgroundColor: Colors.surfaceVariant,
+    },
     stopBtn: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
       backgroundColor: Colors.error,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginLeft: 2,
     },
   }), [Colors]);
 
@@ -83,16 +100,29 @@ export default function ChatInput({ onSend, disabled, placeholder, onPlusPress, 
     <View style={styles.container}>
       <View style={styles.bar}>
         {/* + button */}
-        <TouchableOpacity style={styles.iconBtn} onPress={onPlusPress ?? (() => {})} disabled={disabled}>
-          <MaterialCommunityIcons name="plus" size={22} color={disabled ? Colors.metaText : Colors.onSurface} />
+        <TouchableOpacity 
+          style={styles.iconBtn} 
+          onPress={onPlusPress ?? (() => {})} 
+          disabled={disabled}
+          activeOpacity={0.7}
+        >
+          <MaterialCommunityIcons 
+            name="plus" 
+            size={24} 
+            color={disabled ? Colors.metaText : Colors.primary} 
+          />
         </TouchableOpacity>
 
         {/* Expand toggle */}
-        <TouchableOpacity style={styles.iconBtn} onPress={() => setExpanded(e => !e)}>
+        <TouchableOpacity 
+          style={styles.iconBtn} 
+          onPress={() => setExpanded(e => !e)}
+          activeOpacity={0.7}
+        >
           <MaterialCommunityIcons
             name={expanded ? 'chevron-down' : 'chevron-up'}
-            size={22}
-            color={Colors.onSurface}
+            size={24}
+            color={Colors.onSurfaceVariant}
           />
         </TouchableOpacity>
 
@@ -112,20 +142,34 @@ export default function ChatInput({ onSend, disabled, placeholder, onPlusPress, 
           returnKeyType="send"
           onSubmitEditing={handleSend}
           blurOnSubmit={false}
+          selectionColor={Colors.primary}
         />
 
         {/* Stop (when generating) or Send */}
         {isGenerating && onStop ? (
-          <TouchableOpacity style={styles.stopBtn} onPress={onStop} activeOpacity={0.8}>
-            <MaterialCommunityIcons name="stop" size={20} color={Colors.onPrimary} />
+          <TouchableOpacity 
+            style={[styles.actionBtn, styles.stopBtn]} 
+            onPress={onStop} 
+            activeOpacity={0.8}
+          >
+            <MaterialCommunityIcons name="stop" size={22} color={Colors.onPrimary} />
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
-            style={[styles.sendBtn, (!text.trim() || disabled) && styles.sendBtnDisabled]}
+            style={[
+              styles.actionBtn, 
+              styles.sendBtn, 
+              (!text.trim() || disabled) && styles.sendBtnDisabled
+            ]}
             onPress={handleSend}
             disabled={!text.trim() || disabled}
+            activeOpacity={0.8}
           >
-            <MaterialCommunityIcons name="send" size={20} color={Colors.onPrimary} />
+            <MaterialCommunityIcons 
+              name="arrow-up" 
+              size={24} 
+              color={(!text.trim() || disabled) ? Colors.metaText : Colors.onPrimary} 
+            />
           </TouchableOpacity>
         )}
       </View>
