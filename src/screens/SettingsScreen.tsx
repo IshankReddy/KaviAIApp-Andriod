@@ -13,6 +13,8 @@ import { getModelsDirectorySize, deleteModelFile, syncInstalledModelsFromDevice 
 import { releaseModel } from '../services/LlamaService';
 import { useTheme } from '../theme/theme';
 import SettingsSlider from '../components/SettingsSlider';
+import { authStore } from '../stores/AuthStore';
+import { secretsStore } from '../stores/SecretsStore';
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';
@@ -197,6 +199,16 @@ export default observer(function SettingsScreen() {
     );
   };
 
+  const hasOpenAIKey = secretsStore.openaiKey.trim().length > 0;
+  const hasAnthropicKey = secretsStore.anthropicKey.trim().length > 0;
+  const hasGeminiKey = secretsStore.geminiKey.trim().length > 0;
+
+  const cloudProviders = [
+    { key: 'openai' as const, label: 'OpenAI (ChatGPT)', enabled: hasOpenAIKey },
+    { key: 'anthropic' as const, label: 'Anthropic (Claude)', enabled: hasAnthropicKey },
+    { key: 'gemini' as const, label: 'Google (Gemini)', enabled: hasGeminiKey },
+  ];
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -212,6 +224,43 @@ export default observer(function SettingsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.sectionLabel}>ACCOUNT</Text>
+        <View style={styles.settingBlock}>
+          <Text style={styles.settingLabel}>Signed in as</Text>
+          <Text style={styles.settingHint}>
+            {authStore.user?.email ?? 'Not signed in'}{authStore.isSignedIn ? (authStore.isEmailVerified ? ' · Verified' : ' · Not verified') : ''}
+          </Text>
+
+          {!authStore.isSignedIn ? (
+            <TouchableOpacity
+              style={[styles.presetBtn, { marginBottom: 0, justifyContent: 'center' }]}
+              onPress={() => (navigation as any).navigate('Auth')}
+            >
+              <MaterialCommunityIcons name="login" size={20} color={Colors.onSurface} />
+              <Text style={styles.presetLabel}>Sign in</Text>
+            </TouchableOpacity>
+          ) : (
+            <>
+              {!authStore.isEmailVerified ? (
+                <TouchableOpacity
+                  style={[styles.presetBtn, { marginBottom: 8, justifyContent: 'center' }]}
+                  onPress={() => authStore.resendVerification(authStore.user?.email ?? '')}
+                >
+                  <MaterialCommunityIcons name="email-fast-outline" size={20} color={Colors.onSurface} />
+                  <Text style={styles.presetLabel}>Resend verification email</Text>
+                </TouchableOpacity>
+              ) : null}
+              <TouchableOpacity
+                style={[styles.presetBtn, { marginBottom: 0, justifyContent: 'center' }]}
+                onPress={() => authStore.signOut()}
+              >
+                <MaterialCommunityIcons name="logout" size={20} color={Colors.onSurface} />
+                <Text style={styles.presetLabel}>Sign out</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+
         {/* Chat Generation Preset */}
         <TouchableOpacity
           style={styles.presetBtn}
@@ -231,19 +280,209 @@ export default observer(function SettingsScreen() {
         <View style={styles.settingBlock}>
           <Text style={styles.settingLabel}>Access token (optional)</Text>
           <Text style={styles.settingHint}>
-            For gated or private models. Get a token at huggingface.co/settings/tokens
+            For gated or private models. Requires verified email. Get a token at huggingface.co/settings/tokens
           </Text>
           <TextInput
             style={styles.tokenInput}
-            value={settingsStore.app.hfAccessToken}
-            onChangeText={(v) => settingsStore.setApp('hfAccessToken', v)}
+            value={secretsStore.hfToken}
+            onChangeText={(v) => { void secretsStore.setSecret('hfToken', v); }}
             placeholder="hf_..."
+            placeholderTextColor={Colors.metaText}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={authStore.isSignedIn && authStore.isEmailVerified}
+            onFocus={() => {
+              if (!authStore.isSignedIn || !authStore.isEmailVerified) {
+                (navigation as any).navigate('Auth');
+              }
+            }}
+          />
+        </View>
+
+        <Text style={styles.sectionLabel}>API KEYS (OPTIONAL)</Text>
+        <View style={styles.settingBlock}>
+          <Text style={styles.settingLabel}>OpenAI (ChatGPT) API key</Text>
+          <Text style={styles.settingHint}>Stored securely on device. Used only if you enable cloud chat.</Text>
+          <TextInput
+            style={styles.tokenInput}
+            value={secretsStore.openaiKey}
+            onChangeText={(v) => { void secretsStore.setSecret('openaiKey', v); }}
+            placeholder="sk-..."
             placeholderTextColor={Colors.metaText}
             secureTextEntry
             autoCapitalize="none"
             autoCorrect={false}
           />
         </View>
+        <View style={styles.settingBlock}>
+          <Text style={styles.settingLabel}>Anthropic (Claude) API key</Text>
+          <Text style={styles.settingHint}>Stored securely on device.</Text>
+          <TextInput
+            style={styles.tokenInput}
+            value={secretsStore.anthropicKey}
+            onChangeText={(v) => {
+              void secretsStore.setSecret('anthropicKey', v);
+              if (v.trim().length > 0) {
+                settingsStore.setApp('chatBackend', 'anthropic');
+              }
+            }}
+            placeholder="sk-ant-..."
+            placeholderTextColor={Colors.metaText}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </View>
+        <View style={styles.settingBlock}>
+          <Text style={styles.settingLabel}>Google (Gemini) API key</Text>
+          <Text style={styles.settingHint}>Stored securely on device.</Text>
+          <TextInput
+            style={styles.tokenInput}
+            value={secretsStore.geminiKey}
+            onChangeText={(v) => { void secretsStore.setSecret('geminiKey', v); }}
+            placeholder="AIza..."
+            placeholderTextColor={Colors.metaText}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </View>
+
+        <Text style={styles.sectionLabel}>CHAT PROVIDER</Text>
+        <View style={styles.settingBlock}>
+          <Text style={styles.settingLabel}>Backend</Text>
+          <Text style={styles.settingHint}>
+            Local uses downloaded GGUF models. Cloud uses your API key. Enter a provider key to unlock that provider.
+          </Text>
+          {[{ key: 'local' as const, label: 'Local (on-device)', enabled: true }, ...cloudProviders].map((opt) => {
+            const active = settingsStore.app.chatBackend === opt.key;
+            return (
+              <TouchableOpacity
+                key={opt.key}
+                style={[
+                  styles.row,
+                  { marginBottom: 8, opacity: opt.enabled ? 1 : 0.5 },
+                  active && { borderColor: Colors.primary },
+                ]}
+                onPress={() => {
+                  if (!opt.enabled) return;
+                  if (opt.key !== 'local' && (!authStore.isSignedIn || !authStore.isEmailVerified)) {
+                    (navigation as any).navigate('Auth');
+                    return;
+                  }
+                  settingsStore.setApp('chatBackend', opt.key);
+                }}
+                disabled={!opt.enabled}
+              >
+                <Text style={styles.rowLabel}>{opt.label}</Text>
+                {active ? (
+                  <MaterialCommunityIcons name="check" size={18} color={Colors.primary} />
+                ) : !opt.enabled ? (
+                  <Text style={styles.settingHint}>Add API key</Text>
+                ) : null}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {settingsStore.app.chatBackend === 'openai' && (
+          <View style={styles.settingBlock}>
+            <Text style={styles.settingLabel}>OpenAI model</Text>
+            <Text style={styles.settingHint}>Select a model or type a custom ID below.</Text>
+            {[
+              { id: 'gpt-4.1',      label: 'GPT-4.1  · Recommended · 1M ctx' },
+              { id: 'gpt-4.1-mini', label: 'GPT-4.1 mini  · Fast & cheap' },
+              { id: 'o3',           label: 'o3  · Best reasoning' },
+              { id: 'o4-mini',      label: 'o4-mini  · Fast reasoning' },
+            ].map(({ id, label }) => {
+              const active = settingsStore.app.openaiModel === id;
+              return (
+                <TouchableOpacity
+                  key={id}
+                  style={[styles.row, { marginBottom: 8 }, active && { borderColor: Colors.primary }]}
+                  onPress={() => settingsStore.setApp('openaiModel', id)}
+                >
+                  <Text style={styles.rowLabel}>{label}</Text>
+                  {active ? <MaterialCommunityIcons name="check" size={18} color={Colors.primary} /> : null}
+                </TouchableOpacity>
+              );
+            })}
+            <TextInput
+              style={styles.tokenInput}
+              value={settingsStore.app.openaiModel}
+              onChangeText={(v) => settingsStore.setApp('openaiModel', v)}
+              placeholder="gpt-4.1"
+              placeholderTextColor={Colors.metaText}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+        )}
+        {settingsStore.app.chatBackend === 'anthropic' && (
+          <View style={styles.settingBlock}>
+            <Text style={styles.settingLabel}>Claude model</Text>
+            <Text style={styles.settingHint}>Select a model or type a custom ID below.</Text>
+            {[
+              { id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6  · Best speed + intelligence' },
+              { id: 'claude-opus-4-6',   label: 'Claude Opus 4.6  · Most intelligent · 1M ctx' },
+              { id: 'claude-haiku-4-5',  label: 'Claude Haiku 4.5  · Fastest / cheapest' },
+            ].map(({ id, label }) => {
+              const active = settingsStore.app.anthropicModel === id;
+              return (
+                <TouchableOpacity
+                  key={id}
+                  style={[styles.row, { marginBottom: 8 }, active && { borderColor: Colors.primary }]}
+                  onPress={() => settingsStore.setApp('anthropicModel', id)}
+                >
+                  <Text style={styles.rowLabel}>{label}</Text>
+                  {active ? <MaterialCommunityIcons name="check" size={18} color={Colors.primary} /> : null}
+                </TouchableOpacity>
+              );
+            })}
+            <TextInput
+              style={styles.tokenInput}
+              value={settingsStore.app.anthropicModel}
+              onChangeText={(v) => settingsStore.setApp('anthropicModel', v)}
+              placeholder="claude-sonnet-4-6"
+              placeholderTextColor={Colors.metaText}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+        )}
+        {settingsStore.app.chatBackend === 'gemini' && (
+          <View style={styles.settingBlock}>
+            <Text style={styles.settingLabel}>Gemini model</Text>
+            <Text style={styles.settingHint}>Select a model or type a custom ID below.</Text>
+            {[
+              { id: 'gemini-2.5-flash',      label: 'Gemini 2.5 Flash  · Best price-performance' },
+              { id: 'gemini-2.5-flash-lite',  label: 'Gemini 2.5 Flash-Lite  · Fastest / cheapest' },
+              { id: 'gemini-2.5-pro',         label: 'Gemini 2.5 Pro  · Most capable · 1M ctx' },
+            ].map(({ id, label }) => {
+              const active = settingsStore.app.geminiModel === id;
+              return (
+                <TouchableOpacity
+                  key={id}
+                  style={[styles.row, { marginBottom: 8 }, active && { borderColor: Colors.primary }]}
+                  onPress={() => settingsStore.setApp('geminiModel', id)}
+                >
+                  <Text style={styles.rowLabel}>{label}</Text>
+                  {active ? <MaterialCommunityIcons name="check" size={18} color={Colors.primary} /> : null}
+                </TouchableOpacity>
+              );
+            })}
+            <TextInput
+              style={styles.tokenInput}
+              value={settingsStore.app.geminiModel}
+              onChangeText={(v) => settingsStore.setApp('geminiModel', v)}
+              placeholder="gemini-2.5-flash"
+              placeholderTextColor={Colors.metaText}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+        )}
 
         <Text style={styles.sectionLabel}>APP</Text>
 

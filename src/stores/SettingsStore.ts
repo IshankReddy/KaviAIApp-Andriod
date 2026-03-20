@@ -16,8 +16,12 @@ export interface InferenceSettings {
 export interface AppSettings {
   darkMode: boolean;
   storageUsageBytes: number;
-  /** Hugging Face access token for API and gated model downloads */
-  hfAccessToken: string;
+  /** Chat backend */
+  chatBackend: 'local' | 'openai' | 'anthropic' | 'gemini';
+  /** Default cloud model IDs (provider-specific) */
+  openaiModel: string;
+  anthropicModel: string;
+  geminiModel: string;
 }
 
 const STORAGE_KEY = '@kaviai_settings';
@@ -36,7 +40,14 @@ const DEFAULTS: InferenceSettings = {
 
 class SettingsStore {
   inference: InferenceSettings = { ...DEFAULTS };
-  app: AppSettings = { darkMode: true, storageUsageBytes: 0, hfAccessToken: '' };
+  app: AppSettings = {
+    darkMode: true,
+    storageUsageBytes: 0,
+    chatBackend: 'local',
+    openaiModel: 'gpt-4.1',
+    anthropicModel: 'claude-sonnet-4-6',
+    geminiModel: 'gemini-2.5-flash',
+  };
 
   constructor() {
     makeAutoObservable(this);
@@ -50,9 +61,6 @@ class SettingsStore {
         const saved = JSON.parse(raw);
         Object.assign(this.inference, saved.inference ?? {});
         Object.assign(this.app, saved.app ?? {});
-        if (typeof saved.app?.hfAccessToken === 'string') {
-          this.app.hfAccessToken = saved.app.hfAccessToken;
-        }
         // One-time bump: longer default so stories don't cut off mid-sentence
         if (this.inference.nPredict === 1024) {
           this.inference.nPredict = 2048;

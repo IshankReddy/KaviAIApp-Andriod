@@ -1,0 +1,29 @@
+diff --git a/node_modules/expo-file-system/ios/FileSystemHelpers.swift b/node_modules/expo-file-system/ios/FileSystemHelpers.swift
+index c3cbc27..fd5126a 100644
+--- a/node_modules/expo-file-system/ios/FileSystemHelpers.swift
++++ b/node_modules/expo-file-system/ios/FileSystemHelpers.swift
+@@ -60,7 +60,10 @@ internal func getResourceValues(from directory: URL?, forKeys: Set<URLResourceKe
+ }
+ 
+ internal func ensurePathPermission(_ appContext: AppContext?, path: String, flag: EXFileSystemPermissionFlags) throws {
+-  guard let permissionsManager: EXFilePermissionModuleInterface = appContext?.legacyModule(implementing: EXFilePermissionModuleInterface.self) else {
++  // Prefer legacy module; fall back to appContext.fileSystem (FileSystemManager) when legacy registry isn't set (e.g. SDK 55 development build)
++  let permissionsManager: EXFilePermissionModuleInterface? =
++    appContext?.legacyModule(implementing: EXFilePermissionModuleInterface.self) ?? appContext?.fileSystem
++  guard let permissionsManager else {
+     throw Exceptions.PermissionsModuleNotFound()
+   }
+   guard permissionsManager.getPathPermissions(path).contains(flag) else {
+diff --git a/node_modules/expo-file-system/ios/FileSystemModule.swift b/node_modules/expo-file-system/ios/FileSystemModule.swift
+index d564ae7..226a60e 100644
+--- a/node_modules/expo-file-system/ios/FileSystemModule.swift
++++ b/node_modules/expo-file-system/ios/FileSystemModule.swift
+@@ -7,7 +7,7 @@ private let EVENT_DOWNLOAD_PROGRESS = "expo-file-system.downloadProgress"
+ private let EVENT_UPLOAD_PROGRESS = "expo-file-system.uploadProgress"
+ 
+ public final class FileSystemModule: Module {
+-  private lazy var sessionTaskDispatcher = EXSessionTaskDispatcher(sessionHandler: ExpoAppDelegate.getSubscriberOfType(FileSystemBackgroundSessionHandler.self))
++  private lazy var sessionTaskDispatcher = EXSessionTaskDispatcher(sessionHandler: ExpoAppDelegateSubscriberRepository.getSubscriberOfType(FileSystemBackgroundSessionHandler.self))
+   private lazy var taskHandlersManager = EXTaskHandlersManager()
+   private lazy var resourceManager = PHAssetResourceManager()
+ 

@@ -4,19 +4,19 @@
  */
 
 import axios from 'axios';
-import { settingsStore } from '../stores/SettingsStore';
+import { secretsStore } from '../stores/SecretsStore';
 
 const HF_API = 'https://huggingface.co/api';
 
 function getAuthHeaders(): Record<string, string> {
-  const token = settingsStore.app.hfAccessToken?.trim();
+  const token = secretsStore.hfToken?.trim();
   if (!token) return {};
   return { Authorization: `Bearer ${token}` };
 }
 
 /** Append HF token to a URL for authenticated downloads (gated/private models). */
 export function withToken(url: string): string {
-  const token = settingsStore.app.hfAccessToken?.trim();
+  const token = secretsStore.hfToken?.trim();
   if (!token) return url;
   const sep = url.includes('?') ? '&' : '?';
   return `${url}${sep}token=${encodeURIComponent(token)}`;

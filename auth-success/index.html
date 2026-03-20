@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Email verified – KaviAI</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      padding: 24px;
+      text-align: center;
+    }
+    .card {
+      max-width: 360px;
+    }
+    h1 { font-size: 1.5rem; font-weight: 700; margin: 0 0 12px; color: #fff; }
+    p { margin: 0; line-height: 1.5; color: #b0b0b0; font-size: 0.95rem; }
+    .btn {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: #2e7dff;
+      color: #ffffff;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+    .small {
+      margin-top: 10px;
+      color: #8f8f8f;
+      font-size: 0.85rem;
+      word-break: break-word;
+    }
+  </style>
+  <script>
+    function openKaviAiWithVerification() {
+      // When Supabase redirects here, the URL may include token/code params.
+      // Forward *everything* to the app deep link so the app can exchange/verify and create a session.
+      var query = window.location.search || '';
+      var deepLink = 'kaviai://auth/callback' + query;
+
+      // Attempt to open the app; in desktop browsers this may be blocked, but the message still shows.
+      try {
+        window.location.href = deepLink;
+      } catch (e) {
+        // no-op (fallback message remains)
+      }
+    }
+
+    window.addEventListener('load', function () {
+      // Give the page a moment to render, then try to open the app.
+      setTimeout(openKaviAiWithVerification, 800);
+    });
+  </script>
+</head>
+<body>
+  <div class="card">
+    <h1>Email verified</h1>
+    <p>Opening KaviAI to finish sign up…</p>
+    <a class="btn" id="openBtn" href="#">Open KaviAI now</a>
+    <div class="small" id="debug" style="display:none;"></div>
+  </div>
+
+  <script>
+    // Configure the button's href to the same deep link we auto-open.
+    (function () {
+      var query = window.location.search || '';
+      var deepLink = 'kaviai://auth/callback' + query;
+      var btn = document.getElementById('openBtn');
+      if (btn) btn.setAttribute('href', deepLink);
+      // Keep a tiny debug line for troubleshooting.
+      var dbg = document.getElementById('debug');
+      if (dbg) {
+        dbg.style.display = 'block';
+        dbg.textContent = 'If the app does not open, try the button. URL params forwarded: ' + query;
+      }
+    })();
+  </script>
+</body>
+</html>

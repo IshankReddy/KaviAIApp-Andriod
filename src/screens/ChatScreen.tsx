@@ -11,6 +11,7 @@ import { modelStore } from '../stores/ModelStore';
 import { settingsStore } from '../stores/SettingsStore';
 import { palStore } from '../stores/PalStore';
 import { generateResponse, stopGeneration } from '../services/LlamaService';
+import { generateCloudResponse } from '../services/CloudChatService';
 import MessageBubble from '../components/MessageBubble';
 import ChatInput from '../components/ChatInput';
 import { useTheme } from '../theme/theme';
@@ -108,11 +109,27 @@ export default observer(function ChatScreen() {
   }, [isModelLoaded, modelStore.activeModel]);
 
   const handleSend = async (text: string) => {
-    if (!isModelLoaded) return;
+    const backend = settingsStore.app.chatBackend;
+    const needsLocal = backend === 'local';
+    if (needsLocal && !isModelLoaded) return;
     chatStore.addUserMessage(text);
     const activePal = activeConv?.palId ? palStore.getPal(activeConv.palId) : null;
     const systemPrompt = activePal?.systemPrompt ?? 'You are a helpful AI assistant.';
-    await generateResponse(systemPrompt);
+    if (backend === 'local') {
+      await generateResponse(systemPrompt);
+      return;
+    }
+
+    chatStore.startAssistantMessage();
+    try {
+      const reply = await generateCloudResponse(systemPrompt, chatStore.messages);
+      chatStore.appendToken(reply);
+    } catch (e: any) {
+      const msg = e?.message ? String(e.message) : 'Request failed';
+      chatStore.appendToken(`Error: ${msg}`);
+    } finally {
+      chatStore.finalizeAssistantMessage({ msPerToken: 0, tokensPerSec: 0, ttftMs: 0, tokenCount: 0 });
+    }
   };
 
   const headerTitle = (() => {
@@ -120,7 +137,14 @@ export default observer(function ChatScreen() {
     return activeConv.title.length > 0 ? activeConv.title : 'Chat';
   })();
 
-  const headerSubtitle = modelStore.activeModel?.displayName ?? '';
+  const headerSubtitle =
+    settingsStore.app.chatBackend === 'local'
+      ? (modelStore.activeModel?.displayName ?? '')
+      : `Cloud: ${settingsStore.app.chatBackend}`;
+
+  const inputDisabled = settingsStore.app.chatBackend === 'local'
+    ? (!isModelLoaded || isGenerating)
+    : isGenerating;
 
   const handleChatMenu = () => {
     if (activeConv) {
@@ -242,13 +266,15 @@ export default observer(function ChatScreen() {
           {/* Input */}
           <ChatInput
             onSend={handleSend}
-            disabled={!isModelLoaded || isGenerating}
+            disabled={inputDisabled}
             placeholder={
               isGenerating
                 ? 'Generating...'
-                : modelStore.activeModel
-                  ? `Message ${shortModelName(modelStore.activeModel.displayName)}`
-                  : 'Message KaviAI'
+                : settingsStore.app.chatBackend === 'local'
+                  ? (modelStore.activeModel
+                    ? `Message ${shortModelName(modelStore.activeModel.displayName)}`
+                    : 'Message KaviAI')
+                  : `Message ${settingsStore.app.chatBackend}`
             }
             onPlusPress={() => (navigation as any).navigate('Pals')}
             isGenerating={isGenerating}

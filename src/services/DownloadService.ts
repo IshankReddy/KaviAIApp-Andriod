@@ -1,11 +1,10 @@
 /**
  * DownloadService.ts
  * Handles model downloads from Hugging Face using expo-file-system (Expo Go compatible).
- * Uses the legacy API to avoid deprecation warnings during download.
  * Resolves redirects first so Android (which may not follow 302s) gets a direct CDN URL.
  */
 
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import { runInAction } from 'mobx';
 import { modelStore, Model, CuratedModel, CURATED_MODELS } from '../stores/ModelStore';
 import { withToken, getGGUFFiles } from './HuggingFaceService';
@@ -239,7 +238,7 @@ export async function deleteModelFile(model: Model): Promise<void> {
 }
 
 /** Sync installed list with device: add curated models that are already on disk, remove entries whose file is gone. */
-export async function syncInstalledModelsFromDevice(): Promise<void> {
+export async function syncInstalledModelsFromDevice(): Promise<boolean> {
   try {
     await ensureModelsDir();
     const items = await FileSystem.readDirectoryAsync(MODELS_DIR);
@@ -308,7 +307,13 @@ export async function syncInstalledModelsFromDevice(): Promise<void> {
         runInAction(() => modelStore.removeModel(m.id));
       }
     }
+    return true;
   } catch (e) {
-    console.error('[DownloadService] syncInstalledModelsFromDevice error:', e);
+    const msg = typeof e === 'object' && e && 'message' in e ? String((e as any).message) : String(e);
+    // Expo dev-client can call into FileSystem before the permissions/FS bridge is fully ready on cold start.
+    // In that case we return false and let callers retry silently.
+    if (msg.includes('Permissions module not found')) return false;
+    console.warn('[DownloadService] syncInstalledModelsFromDevice:', msg);
+    return false;
   }
 }

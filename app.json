@@ -2,6 +2,10 @@
   "expo": {
     "name": "KaviAI",
     "slug": "kaviai",
+    "scheme": "kaviai",
+    "extra": {
+      "verificationSuccessUrl": "https://project-s0syc-chta4448s-ishankreddys-projects.vercel.app/"
+    },
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -25,6 +29,9 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
   }
 }

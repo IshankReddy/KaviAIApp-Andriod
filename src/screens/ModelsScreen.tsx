@@ -11,8 +11,27 @@ import { downloadModel, cancelDownload, deleteModelFile } from '../services/Down
 import { initModel, releaseModel, isRunningInExpoGo, LLAMA_UNAVAILABLE_MESSAGE } from '../services/LlamaService';
 import { searchGGUFModels, getGGUFFiles } from '../services/HuggingFaceService';
 import ModelCard from '../components/ModelCard';
+import CloudModelCard, { CloudModel } from '../components/CloudModelCard';
 import RangeSlider from '../components/RangeSlider';
 import { useTheme } from '../theme/theme';
+import { secretsStore } from '../stores/SecretsStore';
+import { settingsStore } from '../stores/SettingsStore';
+
+const ALL_CLOUD_MODELS: CloudModel[] = [
+  // OpenAI
+  { id: 'openai-gpt-4.1',      provider: 'openai',    modelId: 'gpt-4.1',      displayName: 'GPT-4.1',            description: '1M context',   contextWindow: '1M',   tier: 'mid' },
+  { id: 'openai-gpt-4.1-mini', provider: 'openai',    modelId: 'gpt-4.1-mini', displayName: 'GPT-4.1 mini',       description: 'Fast & cheap', contextWindow: '1M',   tier: 'fast' },
+  { id: 'openai-o3',           provider: 'openai',    modelId: 'o3',            displayName: 'o3',                 description: 'Best reasoning',contextWindow: '200K', tier: 'top' },
+  { id: 'openai-o4-mini',      provider: 'openai',    modelId: 'o4-mini',       displayName: 'o4-mini',            description: 'Fast reasoning',contextWindow: '200K', tier: 'mid' },
+  // Anthropic
+  { id: 'anthropic-sonnet-4-6', provider: 'anthropic', modelId: 'claude-sonnet-4-6', displayName: 'Claude Sonnet 4.6', description: 'Speed + intelligence', contextWindow: '1M', tier: 'mid' },
+  { id: 'anthropic-opus-4-6',   provider: 'anthropic', modelId: 'claude-opus-4-6',   displayName: 'Claude Opus 4.6',   description: 'Most intelligent',     contextWindow: '1M', tier: 'top' },
+  { id: 'anthropic-haiku-4-5',  provider: 'anthropic', modelId: 'claude-haiku-4-5',  displayName: 'Claude Haiku 4.5',  description: 'Fastest / cheapest',   contextWindow: '200K', tier: 'fast' },
+  // Gemini
+  { id: 'gemini-2.5-flash',      provider: 'gemini',    modelId: 'gemini-2.5-flash',      displayName: 'Gemini 2.5 Flash',      description: 'Best price-perf',  contextWindow: '1M', tier: 'mid' },
+  { id: 'gemini-2.5-flash-lite', provider: 'gemini',    modelId: 'gemini-2.5-flash-lite',  displayName: 'Gemini 2.5 Flash-Lite', description: 'Fastest / cheapest', contextWindow: '1M', tier: 'fast' },
+  { id: 'gemini-2.5-pro',        provider: 'gemini',    modelId: 'gemini-2.5-pro',         displayName: 'Gemini 2.5 Pro',        description: 'Most capable',     contextWindow: '1M', tier: 'top' },
+];
 
 const PARAM_SLIDER_MIN = 0;
 const PARAM_SLIDER_STEP = 0.1;
@@ -26,7 +45,7 @@ export default observer(function ModelsScreen() {
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [ggufFiles, setGgufFiles] = useState<any[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
-  const [availableSectionCollapsed, setAvailableSectionCollapsed] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<'all' | 'opensource' | 'claude' | 'chatgpt' | 'google'>('all');
   const [sortBy, setSortBy] = useState<ModelSortOption>('sizeAsc');
   const [nameSearch, setNameSearch] = useState('');
   const [paramMinB, setParamMinB] = useState(PARAM_SLIDER_MIN);
@@ -154,6 +173,21 @@ export default observer(function ModelsScreen() {
     resultMeta: { color: Colors.metaText, fontSize: 12 },
     repoLabel: { color: Colors.metaText, fontSize: 12, marginBottom: 12 },
     emptyHint: { color: Colors.metaText, textAlign: 'center', marginTop: 40, fontSize: 14 },
+    filterBar: { flexDirection: 'row', marginBottom: 10 },
+    filterChip: {
+      paddingHorizontal: 14,
+      paddingVertical: 7,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: Colors.border,
+      backgroundColor: Colors.surfaceVariant,
+    },
+    filterChipActive: {
+      backgroundColor: Colors.primary,
+      borderColor: Colors.primary,
+    },
+    filterChipText: { color: Colors.onSurfaceVariant, fontSize: 13, fontWeight: '500' },
+    filterChipTextActive: { color: Colors.onPrimary, fontWeight: '700' },
   }), [Colors]);
 
   const handleDownload = useCallback(async (model: CuratedModel) => {
@@ -267,6 +301,29 @@ export default observer(function ModelsScreen() {
     (navigation as any).navigate('Chat');
   }, [navigation]);
 
+  const handleSelectCloudModel = useCallback((model: CloudModel) => {
+    settingsStore.setApp('chatBackend', model.provider);
+    if (model.provider === 'openai') settingsStore.setApp('openaiModel', model.modelId);
+    if (model.provider === 'anthropic') settingsStore.setApp('anthropicModel', model.modelId);
+    if (model.provider === 'gemini') settingsStore.setApp('geminiModel', model.modelId);
+    (navigation as any).navigate('Chat');
+  }, [navigation]);
+
+  const availableCloudModels = useMemo(() => ALL_CLOUD_MODELS.filter((m) => {
+    if (m.provider === 'openai') return secretsStore.openaiKey.trim().length > 0;
+    if (m.provider === 'anthropic') return secretsStore.anthropicKey.trim().length > 0;
+    if (m.provider === 'gemini') return secretsStore.geminiKey.trim().length > 0;
+    return false;
+  }), [secretsStore.openaiKey, secretsStore.anthropicKey, secretsStore.geminiKey]);
+
+  const filteredCloudModels = useMemo(() => {
+    if (activeFilter === 'claude') return availableCloudModels.filter((m) => m.provider === 'anthropic');
+    if (activeFilter === 'chatgpt') return availableCloudModels.filter((m) => m.provider === 'openai');
+    if (activeFilter === 'google') return availableCloudModels.filter((m) => m.provider === 'gemini');
+    if (activeFilter === 'opensource') return [];
+    return availableCloudModels;
+  }, [availableCloudModels, activeFilter]);
+
   const handleAddCustomModel = async (file: any, repoId: string) => {
     const parts = repoId.split('/');
     const id = repoId.replace('/', '-') + '-' + file.filename.replace('.gguf', '');
@@ -309,21 +366,34 @@ export default observer(function ModelsScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Models: installed at top, then available to download */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Models</Text>
-          <TouchableOpacity onPress={() => setAvailableSectionCollapsed(c => !c)}>
-            <MaterialCommunityIcons
-              name={availableSectionCollapsed ? 'chevron-down' : 'chevron-up'}
-              size={20}
-              color={Colors.onSurfaceVariant}
-            />
-          </TouchableOpacity>
-        </View>
-        {!availableSectionCollapsed && (
+        {/* Controls area */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filterBar}
+          contentContainerStyle={{ gap: 8, paddingRight: 8 }}
+        >
+          {([
+            { key: 'all',        label: 'All' },
+            { key: 'opensource', label: 'Open Source' },
+            { key: 'claude',     label: 'Claude' },
+            { key: 'chatgpt',    label: 'ChatGPT' },
+            { key: 'google',     label: 'Google' },
+          ] as const).map((f) => (
+            <TouchableOpacity
+              key={f.key}
+              style={[styles.filterChip, activeFilter === f.key && styles.filterChipActive]}
+              onPress={() => setActiveFilter(f.key)}
+            >
+              <Text style={[styles.filterChipText, activeFilter === f.key && styles.filterChipTextActive]}>
+                {f.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {(activeFilter === 'all' || activeFilter === 'opensource') && (
           <>
-            <Text style={styles.sectionHint}>Your models at top. Use + to find more.</Text>
-            {/* Name search */}
             <View style={styles.nameSearchRow}>
               <MaterialCommunityIcons name="magnify" size={20} color={Colors.metaText} />
               <TextInput
@@ -341,7 +411,6 @@ export default observer(function ModelsScreen() {
               )}
             </View>
 
-            {/* Sort */}
             <View style={styles.sortRow}>
               <Text style={styles.sortLabel}>Sort:</Text>
               <View style={styles.sortButtons}>
@@ -370,7 +439,6 @@ export default observer(function ModelsScreen() {
               </View>
             </View>
 
-            {/* Parameter range: 0 to max model params */}
             <View style={styles.paramRangeBox}>
               <Text style={styles.paramRangeTitle}>Parameter range (0 – {maxParamB.toFixed(1)}B)</Text>
               <RangeSlider
@@ -386,21 +454,62 @@ export default observer(function ModelsScreen() {
                 }}
               />
             </View>
-
-            {modelsList.map(model => (
-              <ModelCard
-                key={model.id}
-                model={model}
-                onDownload={handleDownload}
-                onCancelDownload={handleCancelDownload}
-                onLoad={handleLoad}
-                onDelete={handleDelete}
-                onChat={handleChat}
-              />
-            ))}
-
-            <View style={{ marginBottom: 8 }} />
           </>
+        )}
+
+        {/* One big list: cloud + open source cards */}
+        {filteredCloudModels.map((m) => {
+          const isActive =
+            settingsStore.app.chatBackend === m.provider &&
+            (m.provider === 'openai'
+              ? settingsStore.app.openaiModel === m.modelId
+              : m.provider === 'anthropic'
+              ? settingsStore.app.anthropicModel === m.modelId
+              : settingsStore.app.geminiModel === m.modelId);
+          return (
+            <CloudModelCard
+              key={m.id}
+              model={m}
+              isActive={isActive}
+              onSelect={handleSelectCloudModel}
+            />
+          );
+        })}
+
+        {(activeFilter === 'all' || activeFilter === 'opensource') &&
+          modelsList.map(model => (
+            <ModelCard
+              key={model.id}
+              model={model}
+              onDownload={handleDownload}
+              onCancelDownload={handleCancelDownload}
+              onLoad={handleLoad}
+              onDelete={handleDelete}
+              onChat={handleChat}
+            />
+          ))}
+
+        {activeFilter !== 'all' && activeFilter !== 'opensource' && filteredCloudModels.length === 0 && (
+          <TouchableOpacity
+            style={{
+              backgroundColor: Colors.surfaceVariant,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: Colors.border,
+              borderStyle: 'dashed',
+              padding: 20,
+              marginBottom: 16,
+              alignItems: 'center',
+              gap: 8,
+            }}
+            onPress={() => (navigation as any).navigate('Settings')}
+          >
+            <MaterialCommunityIcons name="key-outline" size={28} color={Colors.metaText} />
+            <Text style={{ color: Colors.metaText, fontSize: 13, textAlign: 'center' }}>
+              Add an API key in Settings to unlock{' '}
+              {activeFilter === 'claude' ? 'Claude' : activeFilter === 'chatgpt' ? 'ChatGPT' : 'Google'} models.
+            </Text>
+          </TouchableOpacity>
         )}
       </ScrollView>
 

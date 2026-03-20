@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { createDrawerNavigator, DrawerContentScrollView } from '@react-navigation/drawer';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../theme/theme';
+import { observer } from 'mobx-react-lite';
+import { authStore } from '../stores/AuthStore';
 
 import ChatScreen      from '../screens/ChatScreen';
 import ModelsScreen    from '../screens/ModelsScreen';
@@ -23,7 +25,7 @@ const MENU_ITEMS = [
   { name: 'App Info',  icon: 'information-outline' },
 ] as const;
 
-function CustomDrawerContent(props: any) {
+const CustomDrawerContent = observer(function CustomDrawerContent(props: any) {
   const { state, navigation } = props;
   const { Colors } = useTheme();
   const activeIndex = state.index;
@@ -41,6 +43,30 @@ function CustomDrawerContent(props: any) {
     drawerLogo: { width: 48, height: 48, marginBottom: 10, borderRadius: 10 },
     drawerAppName: { color: Colors.onSurface, fontSize: 22, fontWeight: '800', letterSpacing: 0.5 },
     drawerTagline: { color: Colors.metaText, fontSize: 12, marginTop: 2 },
+    accountCard: {
+      marginHorizontal: 10,
+      marginBottom: 10,
+      backgroundColor: Colors.surfaceVariant,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: Colors.border,
+      padding: 12,
+    },
+    accountTitle: { color: Colors.onSurface, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
+    accountEmail: { color: Colors.onSurfaceVariant, marginTop: 6, fontSize: 13 },
+    accountRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
+    accountBtn: {
+      flex: 1,
+      height: 40,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+    },
+    accountBtnPrimary: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+    accountBtnSecondary: { backgroundColor: Colors.surface, borderColor: Colors.border },
+    accountBtnTextPrimary: { color: Colors.onPrimary, fontSize: 13, fontWeight: '700' },
+    accountBtnTextSecondary: { color: Colors.onSurface, fontSize: 13, fontWeight: '700' },
     menuItem: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -56,6 +82,11 @@ function CustomDrawerContent(props: any) {
     menuLabelActive: { color: Colors.onPrimary, fontWeight: '600' },
   }), [Colors]);
 
+  const openAuth = (mode?: 'signin' | 'signup') => {
+    // Drawer is nested under RootStack; navigate via parent navigator.
+    navigation.getParent?.()?.navigate?.('Auth', { mode });
+  };
+
   return (
     <DrawerContentScrollView
       {...props}
@@ -67,6 +98,48 @@ function CustomDrawerContent(props: any) {
         <Text style={styles.drawerAppName}>KaviAI</Text>
         <Text style={styles.drawerTagline}>On-device AI</Text>
       </View>
+
+      <View style={styles.accountCard}>
+        <Text style={styles.accountTitle}>Account</Text>
+        <Text style={styles.accountEmail}>
+          {authStore.user?.email ?? 'Not signed in'}
+          {authStore.isSignedIn ? (authStore.isEmailVerified ? ' · Verified' : ' · Not verified') : ''}
+        </Text>
+        {!authStore.isSignedIn ? (
+          <View style={styles.accountRow}>
+            <TouchableOpacity
+              style={[styles.accountBtn, styles.accountBtnSecondary]}
+              onPress={() => openAuth('signup')}
+            >
+              <Text style={styles.accountBtnTextSecondary}>Sign up</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.accountBtn, styles.accountBtnPrimary]}
+              onPress={() => openAuth('signin')}
+            >
+              <Text style={styles.accountBtnTextPrimary}>Sign in</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.accountRow}>
+            {!authStore.isEmailVerified ? (
+              <TouchableOpacity
+                style={[styles.accountBtn, styles.accountBtnSecondary]}
+                onPress={() => authStore.resendVerification(authStore.user?.email ?? '')}
+              >
+                <Text style={styles.accountBtnTextSecondary}>Verify email</Text>
+              </TouchableOpacity>
+            ) : null}
+            <TouchableOpacity
+              style={[styles.accountBtn, styles.accountBtnPrimary]}
+              onPress={() => authStore.signOut()}
+            >
+              <Text style={styles.accountBtnTextPrimary}>Sign out</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+
       {MENU_ITEMS.map((item, idx) => {
         const isActive = idx === activeIndex;
         return (
@@ -86,7 +159,7 @@ function CustomDrawerContent(props: any) {
       })}
     </DrawerContentScrollView>
   );
-}
+});
 
 export default function DrawerNavigator() {
   const { Colors } = useTheme();
