@@ -7,6 +7,7 @@ import { observer } from 'mobx-react-lite';
 import { useNavigation, DrawerActions } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { modelStore, CURATED_MODELS, CuratedModel, ModelSortOption, ModelCategory, parametersToB } from '../stores/ModelStore';
+import { chatStore } from '../stores/ChatStore';
 import { downloadModel, cancelDownload, deleteModelFile } from '../services/DownloadService';
 import { initModel, releaseModel, isRunningInExpoGo, LLAMA_UNAVAILABLE_MESSAGE } from '../services/LlamaService';
 import { searchGGUFModels, getGGUFFiles } from '../services/HuggingFaceService';
@@ -16,6 +17,7 @@ import RangeSlider from '../components/RangeSlider';
 import { useTheme, DesignTokens } from '../theme/theme';
 import { secretsStore } from '../stores/SecretsStore';
 import { settingsStore } from '../stores/SettingsStore';
+import { authStore } from '../stores/AuthStore';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const ALL_CLOUD_MODELS: CloudModel[] = [
@@ -68,7 +70,7 @@ export default observer(function ModelsScreen() {
   const [ggufFiles, setGgufFiles] = useState<any[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
 
-  type FilterKey = 'models' | 'ondevice' | 'claude' | 'chatgpt' | 'gemini';
+  type FilterKey = 'models' | 'ondevice' | 'manage' | 'claude' | 'chatgpt' | 'gemini';
   const [activeFilter, setActiveFilter] = useState<FilterKey>('models');
   const [selectedCategory, setSelectedCategory] = useState<ModelCategory | null>(null);
 
@@ -90,6 +92,14 @@ export default observer(function ModelsScreen() {
     setParamMaxB((prev) => Math.min(prev, maxParamB));
     setParamMinB((prev) => Math.min(prev, maxParamB));
   }, [maxParamB]);
+
+  const isAuthenticated = authStore.isSignedIn && authStore.isEmailVerified;
+
+  useEffect(() => {
+    if (!isAuthenticated && (activeFilter === 'claude' || activeFilter === 'chatgpt' || activeFilter === 'gemini')) {
+      setActiveFilter('models');
+    }
+  }, [isAuthenticated, activeFilter]);
 
   const { Colors } = useTheme();
 
@@ -162,9 +172,36 @@ export default observer(function ModelsScreen() {
     // Installed section
     installedTitle: { color: Colors.onSurface, fontSize: 16, fontWeight: '800', marginBottom: 12, marginTop: 4 },
 
-    fab: { position: 'absolute', right: 20, bottom: 28, width: 56, height: 56, borderRadius: 28, overflow: 'hidden',
+    // Management tab
+    manageCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: Colors.surface,
+      borderRadius: 14,
+      borderWidth: 1.5,
+      borderColor: Colors.border,
+      padding: 14,
+      marginBottom: 10,
+      gap: 12,
+    },
+    manageCardActive: { borderColor: Colors.primary },
+    manageIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: Colors.primary + '15', alignItems: 'center', justifyContent: 'center' },
+    manageInfo: { flex: 1 },
+    manageName: { color: Colors.onSurface, fontSize: 15, fontWeight: '700', letterSpacing: -0.2 },
+    manageMeta: { color: Colors.onSurfaceVariant, fontSize: 12, fontWeight: '600', marginTop: 2 },
+    manageActions: { flexDirection: 'row', gap: 8 },
+    manageBtn: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.background },
+    manageBtnDanger: { borderColor: Colors.error + '40', backgroundColor: Colors.error + '10' },
+    manageEmpty: { alignItems: 'center', gap: 12, paddingVertical: 60 },
+    manageEmptyText: { color: Colors.onSurfaceVariant, fontSize: 14, fontWeight: '600', textAlign: 'center', lineHeight: 20 },
+    manageSummary: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: Colors.surface, borderRadius: 12, borderWidth: 1, borderColor: Colors.border, padding: 14, marginBottom: 16 },
+    manageSummaryText: { color: Colors.onSurfaceVariant, fontSize: 13, fontWeight: '600', flex: 1 },
+    manageSummaryValue: { color: Colors.primary, fontSize: 14, fontWeight: '800' },
+
+    fab: { position: 'absolute', right: 20, bottom: 28, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, height: 50, borderRadius: 25, overflow: 'hidden',
       ...Platform.select({ ios: { shadowColor: Colors.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 10 }, android: { elevation: 8 } }) },
-    fabGradient: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
+    fabGradient: { flexDirection: 'row', alignItems: 'center', gap: 8, width: '100%', height: '100%', paddingHorizontal: 18, justifyContent: 'center' },
+    fabText: { color: Colors.onPrimary, fontSize: 14, fontWeight: '700' },
 
     modal: { flex: 1, backgroundColor: Colors.background, padding: 16 },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: Platform.OS === 'ios' ? 42 : 8, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: Colors.border, marginBottom: 16 },
@@ -186,14 +223,21 @@ export default observer(function ModelsScreen() {
   const handleCancelDownload = useCallback(async (modelId: string) => { await cancelDownload(modelId); }, []);
   const handleLoad = useCallback(async (modelId: string) => {
     const model = modelStore.installedModels.find(m => m.id === modelId);
-    if (!model || modelStore.activeModel?.id === modelId) return;
-    modelStore.setActiveModel(model);
-    const result = await initModel(model.filePath);
-    if (!result.success) {
-      Alert.alert('Load Failed', result.errorMessage ?? (isRunningInExpoGo() ? LLAMA_UNAVAILABLE_MESSAGE : 'Could not initialize the model.'));
-      modelStore.setActiveModel(null);
+    if (!model) return;
+    const isSameModel = modelStore.activeModel?.id === modelId;
+    if (!isSameModel) {
+      modelStore.setActiveModel(model);
+      const result = await initModel(model.filePath);
+      if (!result.success) {
+        Alert.alert('Load Failed', result.errorMessage ?? (isRunningInExpoGo() ? LLAMA_UNAVAILABLE_MESSAGE : 'Could not initialize the model.'));
+        modelStore.setActiveModel(null);
+        return;
+      }
     }
-  }, []);
+    settingsStore.setApp('chatBackend', 'local');
+    chatStore.createConversation(modelId);
+    (navigation as any).navigate('Chat');
+  }, [navigation]);
   const handleDelete = useCallback((modelId: string) => {
     const model = modelStore.installedModels.find(m => m.id === modelId);
     if (!model) return;
@@ -205,12 +249,24 @@ export default observer(function ModelsScreen() {
       }},
     ]);
   }, []);
-  const handleChat = useCallback(() => { (navigation as any).navigate('Chat'); }, [navigation]);
+  const handleChat = useCallback(() => {
+    const mid = modelStore.activeModel?.id ?? '';
+    if (mid) {
+      settingsStore.setApp('chatBackend', 'local');
+      chatStore.createConversation(mid);
+    }
+    (navigation as any).navigate('Chat');
+  }, [navigation]);
   const handleSelectCloudModel = useCallback((model: CloudModel) => {
+    if (!authStore.isSignedIn || !authStore.isEmailVerified) {
+      (navigation as any).navigate('Auth');
+      return;
+    }
     settingsStore.setApp('chatBackend', model.provider);
     if (model.provider === 'openai') settingsStore.setApp('openaiModel', model.modelId);
     if (model.provider === 'anthropic') settingsStore.setApp('anthropicModel', model.modelId);
     if (model.provider === 'gemini') settingsStore.setApp('geminiModel', model.modelId);
+    chatStore.createConversation(`cloud-${model.modelId}`);
     (navigation as any).navigate('Chat');
   }, [navigation]);
   const handleSearch = async () => {
@@ -300,7 +356,16 @@ export default observer(function ModelsScreen() {
 
   const recGb = (modelStore.recommendedMaxBytes / (1024 * 1024 * 1024)).toFixed(1);
   const isCloudFilter = activeFilter === 'claude' || activeFilter === 'chatgpt' || activeFilter === 'gemini';
-  const showList = activeFilter === 'ondevice' || isCloudFilter || selectedCategory !== null;
+  const showList = activeFilter === 'ondevice' || activeFilter === 'manage' || isCloudFilter || selectedCategory !== null;
+
+  const totalInstalledBytes = useMemo(() =>
+    modelStore.installedModels.reduce((sum, m) => sum + m.sizeBytes, 0),
+  [modelStore.installedModels]);
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+    if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+  };
 
   // ---- Render helpers ----
   const renderCategoryGrid = () => {
@@ -310,16 +375,7 @@ export default observer(function ModelsScreen() {
     }
     return (
       <>
-        {installedForDisplay.length > 0 && (
-          <>
-            <Text style={styles.installedTitle}>Installed Models</Text>
-            {installedForDisplay.map(model => (
-              <ModelCard key={model.id} model={model} onDownload={handleDownload} onCancelDownload={handleCancelDownload} onLoad={handleLoad} onDelete={handleDelete} onChat={handleChat} />
-            ))}
-            <Text style={[styles.installedTitle, { marginTop: 20 }]}>Explore Categories</Text>
-          </>
-        )}
-        {!installedForDisplay.length && <Text style={styles.installedTitle}>Explore Categories</Text>}
+        <Text style={styles.installedTitle}>Explore Categories</Text>
         {rows.map((row, ri) => (
           <View key={ri} style={styles.gridRow}>
             {row.map((cat) => (
@@ -346,6 +402,66 @@ export default observer(function ModelsScreen() {
       </>
     );
   };
+
+  const renderManagement = () => (
+    <>
+      <View style={styles.manageSummary}>
+        <MaterialCommunityIcons name="harddisk" size={20} color={Colors.primary} />
+        <Text style={styles.manageSummaryText}>
+          {installedForDisplay.length} model{installedForDisplay.length !== 1 ? 's' : ''} installed
+        </Text>
+        <Text style={styles.manageSummaryValue}>{formatSize(totalInstalledBytes)}</Text>
+      </View>
+
+      {installedForDisplay.length === 0 ? (
+        <View style={styles.manageEmpty}>
+          <MaterialCommunityIcons name="package-variant" size={48} color={Colors.border} />
+          <Text style={styles.manageEmptyText}>
+            No models installed yet.{'\n'}Browse categories or search to download models.
+          </Text>
+        </View>
+      ) : (
+        installedForDisplay.map((model) => {
+          const isActive = modelStore.activeModel?.id === model.id;
+          return (
+            <View key={model.id} style={[styles.manageCard, isActive && styles.manageCardActive]}>
+              <View style={[styles.manageIcon, isActive && { backgroundColor: Colors.primary + '30' }]}>
+                <MaterialCommunityIcons
+                  name={isActive ? 'check-circle' : 'cube-outline'}
+                  size={22}
+                  color={isActive ? Colors.primary : Colors.onSurfaceVariant}
+                />
+              </View>
+              <View style={styles.manageInfo}>
+                <Text style={styles.manageName}>{model.displayName}</Text>
+                <Text style={styles.manageMeta}>
+                  {model.quantization} · {model.sizeLabel}{isActive ? ' · Active' : ''}
+                </Text>
+              </View>
+              <View style={styles.manageActions}>
+                <TouchableOpacity
+                  style={styles.manageBtn}
+                  onPress={() => handleLoad(model.id)}
+                >
+                  <MaterialCommunityIcons
+                    name={isActive ? 'chat-outline' : 'play-outline'}
+                    size={18}
+                    color={Colors.primary}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.manageBtn, styles.manageBtnDanger]}
+                  onPress={() => handleDelete(model.id)}
+                >
+                  <MaterialCommunityIcons name="trash-can-outline" size={18} color={Colors.error} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          );
+        })
+      )}
+    </>
+  );
 
   const renderListControls = () => (
     <>
@@ -412,9 +528,12 @@ export default observer(function ModelsScreen() {
           {([
             { key: 'models' as FilterKey,  label: 'Models' },
             { key: 'ondevice' as FilterKey, label: 'On-Device' },
-            { key: 'claude' as FilterKey,   label: 'Claude' },
-            { key: 'chatgpt' as FilterKey,  label: 'ChatGPT' },
-            { key: 'gemini' as FilterKey,   label: 'Gemini' },
+            { key: 'manage' as FilterKey,  label: `Manage${installedForDisplay.length > 0 ? ` (${installedForDisplay.length})` : ''}` },
+            ...(isAuthenticated ? [
+              { key: 'claude' as FilterKey,   label: 'Claude' },
+              { key: 'chatgpt' as FilterKey,  label: 'ChatGPT' },
+              { key: 'gemini' as FilterKey,   label: 'Gemini' },
+            ] : []),
           ]).map((f) => (
             <TouchableOpacity
               key={f.key}
@@ -467,6 +586,9 @@ export default observer(function ModelsScreen() {
           </>
         )}
 
+        {/* Management tab */}
+        {activeFilter === 'manage' && !selectedCategory && renderManagement()}
+
         {/* Cloud filters */}
         {isCloudFilter && !selectedCategory && (
           <>
@@ -492,7 +614,8 @@ export default observer(function ModelsScreen() {
       {/* FAB */}
       <TouchableOpacity style={styles.fab} onPress={() => setSearchModal(true)} activeOpacity={0.8}>
         <LinearGradient colors={Colors.primaryGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.fabGradient}>
-          <MaterialCommunityIcons name="plus" size={28} color={Colors.onPrimary} />
+          <MaterialCommunityIcons name="web" size={18} color={Colors.onPrimary} />
+          <Text style={styles.fabText}>Find Models on Hugging Face</Text>
         </LinearGradient>
       </TouchableOpacity>
 

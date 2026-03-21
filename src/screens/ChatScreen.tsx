@@ -16,6 +16,8 @@ import MessageBubble from '../components/MessageBubble';
 import ChatInput from '../components/ChatInput';
 import { useTheme, DesignTokens } from '../theme/theme';
 import { LinearGradient } from 'expo-linear-gradient';
+import { secretsStore } from '../stores/SecretsStore';
+import { authStore } from '../stores/AuthStore';
 
 const LOGO = require('../../assets/logo.png');
 
@@ -230,26 +232,41 @@ export default observer(function ChatScreen() {
     }
   }, [messages.length, chatStore.streamingContent]);
 
-  const isCloudBackend = settingsStore.app.chatBackend !== 'local';
+  const cloudBackend = settingsStore.app.chatBackend;
+  const hasCloudKey = (() => {
+    if (cloudBackend === 'openai') return secretsStore.openaiKey.trim().length > 0;
+    if (cloudBackend === 'anthropic') return secretsStore.anthropicKey.trim().length > 0;
+    if (cloudBackend === 'gemini') return secretsStore.geminiKey.trim().length > 0;
+    return false;
+  })();
+  const isCloudBackend = cloudBackend !== 'local' && hasCloudKey && authStore.isSignedIn && authStore.isEmailVerified;
+
+  const cloudModelId = (() => {
+    const b = settingsStore.app.chatBackend;
+    if (b === 'openai') return settingsStore.app.openaiModel;
+    if (b === 'anthropic') return settingsStore.app.anthropicModel;
+    if (b === 'gemini') return settingsStore.app.geminiModel;
+    return '';
+  })();
 
   useEffect(() => {
     if (!activeConv) {
       if (isCloudBackend) {
-        chatStore.createConversation(`cloud-${settingsStore.app.chatBackend}`);
+        chatStore.createConversation(`cloud-${cloudModelId || settingsStore.app.chatBackend}`);
       } else if (isModelLoaded && modelStore.activeModel) {
         chatStore.createConversation(modelStore.activeModel.id);
       }
     }
-  }, [isModelLoaded, modelStore.activeModel, isCloudBackend, activeConv]);
+  }, [isModelLoaded, modelStore.activeModel, isCloudBackend, activeConv, cloudModelId]);
 
   const handleSend = async (text: string) => {
-    const backend = settingsStore.app.chatBackend;
-    if (backend === 'local' && !isModelLoaded) return;
+    const useCloud = isCloudBackend;
+    if (!useCloud && !isModelLoaded) return;
 
     if (!chatStore.activeConversation) {
-      const mid = backend === 'local'
-        ? (modelStore.activeModel?.id ?? '')
-        : `cloud-${backend}`;
+      const mid = useCloud
+        ? `cloud-${cloudModelId || settingsStore.app.chatBackend}`
+        : (modelStore.activeModel?.id ?? '');
       if (!mid) return;
       chatStore.createConversation(mid);
     }
@@ -259,7 +276,7 @@ export default observer(function ChatScreen() {
     const activePal = conv?.palId ? palStore.getPal(conv.palId) : null;
     const systemPrompt = activePal?.systemPrompt ?? 'You are a helpful AI assistant.';
 
-    if (backend === 'local') {
+    if (!useCloud) {
       await generateResponse(systemPrompt);
       return;
     }
@@ -283,20 +300,16 @@ export default observer(function ChatScreen() {
   })();
 
   const headerSubtitle = (() => {
-    const backend = settingsStore.app.chatBackend;
-    if (backend === 'local') return modelStore.activeModel?.displayName ?? '';
-    if (backend === 'openai') return settingsStore.app.openaiModel;
-    if (backend === 'anthropic') return settingsStore.app.anthropicModel;
-    if (backend === 'gemini') return settingsStore.app.geminiModel;
-    return '';
+    if (!isCloudBackend) return modelStore.activeModel?.displayName ?? '';
+    return cloudModelId;
   })();
 
-  const inputDisabled = settingsStore.app.chatBackend === 'local'
-    ? (!isModelLoaded || isGenerating)
-    : isGenerating;
+  const inputDisabled = isCloudBackend
+    ? isGenerating
+    : (!isModelLoaded || isGenerating);
 
   const getConversationModelId = () => {
-    if (isCloudBackend) return `cloud-${settingsStore.app.chatBackend}`;
+    if (isCloudBackend) return `cloud-${cloudModelId || settingsStore.app.chatBackend}`;
     return modelStore.activeModel?.id ?? '';
   };
 
@@ -419,7 +432,7 @@ export default observer(function ChatScreen() {
             </View>
           )}
 
-          {!isModelLoaded && !modelStore.isLoadingModel && hasModels && settingsStore.app.chatBackend === 'local' && (
+          {!isModelLoaded && !modelStore.isLoadingModel && hasModels && !isCloudBackend && (
             <TouchableOpacity
               style={styles.notLoadedBar}
               activeOpacity={0.7}
@@ -460,11 +473,11 @@ export default observer(function ChatScreen() {
             placeholder={
               isGenerating
                 ? 'Generating...'
-                : settingsStore.app.chatBackend === 'local'
-                  ? (modelStore.activeModel
+                : isCloudBackend
+                  ? `Message ${cloudModelId || settingsStore.app.chatBackend}`
+                  : (modelStore.activeModel
                     ? `Message ${shortModelName(modelStore.activeModel.displayName)}`
                     : 'Message KaviAI')
-                  : `Message ${settingsStore.app.chatBackend}`
             }
             onPlusPress={() => (navigation as any).navigate('Pals')}
             isGenerating={isGenerating}

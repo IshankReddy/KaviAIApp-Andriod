@@ -137,6 +137,11 @@ class ChatStore {
       const last = msgs[msgs.length - 1];
       if (last.role === 'assistant') {
         Object.assign(last, metrics);
+        last.content = last.content
+          .replace(/<\|(?:im_end|im_start|eot_id|end|endoftext|end_of_turn|assistant|user|system|start_header_id|end_header_id)\|?>?[a-z]*/g, '')
+          .replace(/<\/s>/g, '')
+          .replace(/\n(User|Assistant|Human|Response|user|assistant|human|response):[\s\S]*$/m, '')
+          .trim();
       }
     }
     this.isGenerating = false;

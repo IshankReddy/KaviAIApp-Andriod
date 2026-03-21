@@ -138,6 +138,47 @@ function buildChatMLPrompt(systemPrompt: string, messages: { role: string; conte
   return prompt;
 }
 
+const STOP_SEQUENCES = [
+  '<|im_end|>', '<|im_start|>', '</s>', '<|eot_id|>', '<|end|>',
+  '<|endoftext|>', '<|end_of_turn|>', '<|assistant|>', '<|user|>',
+  '<|start_header_id|>', '<|end_header_id|>',
+  '\nUser:', '\nuser:', '\nAssistant:', '\nassistant:',
+  '\n### User', '\n### Assistant', '\n### Human', '\n### Response',
+  '\nHuman:', '\nhuman:',
+];
+
+async function buildPrompt(
+  ctx: any,
+  systemPrompt: string,
+  messages: { role: string; content: string }[],
+): Promise<{ prompt: string; stop: string[] }> {
+  const chatMessages = [
+    { role: 'system', content: systemPrompt },
+    ...messages,
+  ];
+
+  if (typeof ctx.getFormattedChat === 'function') {
+    try {
+      const formatted = await ctx.getFormattedChat(chatMessages, null);
+      if (typeof formatted === 'string' && formatted.length > 0) {
+        return { prompt: formatted, stop: STOP_SEQUENCES };
+      }
+    } catch (_) {}
+  }
+
+  return {
+    prompt: buildChatMLPrompt(systemPrompt, messages),
+    stop: STOP_SEQUENCES,
+  };
+}
+
+const TEMPLATE_TOKEN_RE = /<\|(?:im_end|im_start|eot_id|end|endoftext|end_of_turn|assistant|user|system|start_header_id|end_header_id)\|?>?[a-z]*/g;
+const ROLE_PREFIX_RE = /^(User|Assistant|Human|Response|user|assistant|human|response):\s*/;
+
+function stripTemplateTokens(text: string): string {
+  return text.replace(TEMPLATE_TOKEN_RE, '').replace(/<\/s>/g, '');
+}
+
 export async function generateResponse(systemPrompt: string): Promise<void> {
   const ctx = modelStore.llamaContext;
   if (!ctx) {
@@ -146,13 +187,16 @@ export async function generateResponse(systemPrompt: string): Promise<void> {
   }
 
   const msgs = chatStore.messages.map(m => ({ role: m.role, content: m.content }));
-  const prompt = buildChatMLPrompt(systemPrompt, msgs);
+  const { prompt, stop } = await buildPrompt(ctx, systemPrompt, msgs);
   const { nPredict, temperature, topK, topP, minP, repeatPenalty } = settingsStore.inference;
 
   chatStore.startAssistantMessage();
   const startTs = Date.now();
   let tokenCount = 0;
   let firstTokenTs: number | null = null;
+  let tokenBuffer = '';
+  let shouldStop = false;
+  let fullOutput = '';
 
   try {
     const result = await ctx.completion(
@@ -164,14 +208,49 @@ export async function generateResponse(systemPrompt: string): Promise<void> {
         top_p: topP,
         min_p: minP,
         repeat_penalty: repeatPenalty,
-        stop: ['<|im_end|>', '<|im_start|>'],
+        stop,
       },
       (data: { token: string }) => {
+        if (shouldStop) return;
         if (firstTokenTs === null) firstTokenTs = Date.now();
         tokenCount++;
-        runInAction(() => chatStore.appendToken(data.token));
+
+        tokenBuffer += data.token;
+        fullOutput += data.token;
+
+        for (const sq of STOP_SEQUENCES) {
+          if (fullOutput.includes(sq)) {
+            shouldStop = true;
+            try { ctx.stopCompletion(); } catch (_) {}
+            const beforeStop = fullOutput.split(sq)[0];
+            const cleaned = stripTemplateTokens(beforeStop).replace(ROLE_PREFIX_RE, '');
+            if (cleaned.length > 0) {
+              runInAction(() => {
+                chatStore.streamingContent = '';
+                chatStore.appendToken(cleaned);
+              });
+            }
+            tokenBuffer = '';
+            return;
+          }
+        }
+
+        const cleaned = stripTemplateTokens(tokenBuffer);
+        if (cleaned.includes('<|') || cleaned.includes('<')) return;
+
+        if (cleaned.length > 0) {
+          runInAction(() => chatStore.appendToken(cleaned));
+        }
+        tokenBuffer = '';
       },
     );
+
+    if (!shouldStop && tokenBuffer.length > 0) {
+      const finalCleaned = stripTemplateTokens(tokenBuffer);
+      if (finalCleaned.length > 0) {
+        runInAction(() => chatStore.appendToken(finalCleaned));
+      }
+    }
 
     const totalMs = Date.now() - startTs;
     const ttftMs = firstTokenTs ? firstTokenTs - startTs : totalMs;

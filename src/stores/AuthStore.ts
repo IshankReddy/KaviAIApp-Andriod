@@ -169,9 +169,11 @@ class AuthStore {
     }
   }
 
-  async signIn(email: string, password: string): Promise<boolean> {
-    this.isLoading = true;
-    this.error = null;
+  async signIn(email: string, password: string, options?: { silent?: boolean }): Promise<boolean> {
+    if (!options?.silent) {
+      this.isLoading = true;
+      this.error = null;
+    }
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
@@ -183,14 +185,18 @@ class AuthStore {
       if (data.user) await ensureProfile(data.user.id, data.user.email);
       return true;
     } catch (e: any) {
-      runInAction(() => {
-        this.error = formatAuthError(e?.message, 'Sign in failed');
-      });
+      if (!options?.silent) {
+        runInAction(() => {
+          this.error = formatAuthError(e?.message, 'Sign in failed');
+        });
+      }
       return false;
     } finally {
-      runInAction(() => {
-        this.isLoading = false;
-      });
+      if (!options?.silent) {
+        runInAction(() => {
+          this.isLoading = false;
+        });
+      }
     }
   }
 
@@ -255,7 +261,7 @@ class AuthStore {
   async refreshSessionIfNeeded(): Promise<void> {
     if (!this.session?.access_token || this.isEmailVerified) return;
     try {
-      const { data, error } = await supabase.auth.getSession();
+      const { data, error } = await supabase.auth.refreshSession();
       if (error || !data.session) return;
       runInAction(() => {
         this.session = data.session;

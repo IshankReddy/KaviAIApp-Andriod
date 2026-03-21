@@ -11,6 +11,8 @@ import { chatStore } from '../stores/ChatStore';
 import { modelStore } from '../stores/ModelStore';
 import { settingsStore } from '../stores/SettingsStore';
 import { initModel, isRunningInExpoGo, LLAMA_UNAVAILABLE_MESSAGE } from '../services/LlamaService';
+import { authStore } from '../stores/AuthStore';
+import { secretsStore } from '../stores/SecretsStore';
 import { useTheme, DesignTokens } from '../theme/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -412,8 +414,13 @@ export default observer(function PalsScreen() {
 
   const handleStartChat = async (pal: Pal) => {
     const backend = settingsStore.app.chatBackend;
+    const isAuth = authStore.isSignedIn && authStore.isEmailVerified;
+    const hasKey = backend === 'openai' ? secretsStore.openaiKey.trim().length > 0
+      : backend === 'anthropic' ? secretsStore.anthropicKey.trim().length > 0
+      : backend === 'gemini' ? secretsStore.geminiKey.trim().length > 0
+      : false;
 
-    if (backend !== 'local') {
+    if (backend !== 'local' && isAuth && hasKey) {
       chatStore.createConversation(`cloud-${backend}`, pal.id);
       (navigation as any).navigate('Chat');
       return;

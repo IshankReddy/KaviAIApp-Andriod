@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Platform, KeyboardAvoidingView } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Platform, KeyboardAvoidingView, AppState } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -64,16 +64,58 @@ export default observer(function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [didSignUp, setDidSignUp] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const credentialsRef = useRef({ email: '', password: '' });
+
+  useEffect(() => {
+    credentialsRef.current = { email: email.trim(), password };
+  }, [email, password]);
+
+  const tryAutoSignIn = async () => {
+    if (authStore.isSignedIn && authStore.isEmailVerified) {
+      navigation.goBack();
+      return;
+    }
+    if (authStore.session?.access_token) {
+      await authStore.refreshSessionIfNeeded();
+      if (authStore.isSignedIn && authStore.isEmailVerified) {
+        navigation.goBack();
+        return;
+      }
+    }
+    const { email: e, password: p } = credentialsRef.current;
+    if (!e || p.length < 6) return;
+    const ok = await authStore.signIn(e, p, { silent: true });
+    if (ok && authStore.isSignedIn && authStore.isEmailVerified) {
+      navigation.goBack();
+    }
+  };
 
   useFocusEffect(
     React.useCallback(() => {
-      void authStore.refreshSessionIfNeeded().then(() => {
-        if (authStore.isSignedIn && authStore.isEmailVerified) {
-          navigation.goBack();
-        }
-      });
+      void tryAutoSignIn();
     }, [navigation])
   );
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && didSignUp) {
+        void tryAutoSignIn();
+      }
+    });
+    return () => sub.remove();
+  }, [navigation, didSignUp]);
+
+  useEffect(() => {
+    if (!didSignUp) {
+      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+      return;
+    }
+    pollRef.current = setInterval(() => {
+      void tryAutoSignIn();
+    }, 4000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [didSignUp, navigation]);
 
   const canSubmit = isValidEmail(email) && password.length >= 6 && !authStore.isLoading;
 
@@ -90,7 +132,6 @@ export default observer(function LoginScreen() {
     if (!canSubmit) return;
     const ok = await authStore.signUp(email.trim(), password);
     if (!ok) return;
-    // If email confirmation is required, keep the user here until they verify.
     if (authStore.isSignedIn && authStore.isEmailVerified) navigation.goBack();
     else setDidSignUp(true);
   };
@@ -149,14 +190,14 @@ export default observer(function LoginScreen() {
               onPress={onSignUp}
               disabled={!canSubmit}
             >
-              <Text style={styles.btnTextSecondary}>{authStore.isLoading ? 'Working…' : 'Sign up'}</Text>
+              <Text style={styles.btnTextSecondary}>{authStore.isLoading ? 'Working\u2026' : 'Sign up'}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.btn, styles.btnPrimary, !canSubmit && { opacity: 0.6 }]}
               onPress={onSignIn}
               disabled={!canSubmit}
             >
-              <Text style={styles.btnTextPrimary}>{authStore.isLoading ? 'Working…' : 'Sign in'}</Text>
+              <Text style={styles.btnTextPrimary}>{authStore.isLoading ? 'Working\u2026' : 'Sign in'}</Text>
             </TouchableOpacity>
           </View>
 
@@ -164,10 +205,10 @@ export default observer(function LoginScreen() {
           {didSignUp && (
             <>
               <Text style={styles.success}>
-                Check your inbox to verify your email, then sign in.
+                Check your inbox and verify your email. You will be signed in automatically once verified.
               </Text>
               <Text style={[styles.hint, { marginTop: 8 }]}>
-                Tap the link on this device. If it opens in Gmail, use “Open in browser” (Chrome/Safari) so the app can open.
+                Tap the verification link in your email. This screen will close automatically once confirmed.
               </Text>
             </>
           )}
@@ -184,4 +225,3 @@ export default observer(function LoginScreen() {
     </KeyboardAvoidingView>
   );
 });
-
