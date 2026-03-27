@@ -287,9 +287,13 @@ export default observer(function SettingsScreen() {
   }), [Colors]);
 
   const refreshStorage = async () => {
-    await syncInstalledModelsFromDevice();
-    const bytes = await getModelsDirectorySize();
-    setStorageUsage(formatBytes(bytes));
+    try {
+      await syncInstalledModelsFromDevice();
+      const bytes = await getModelsDirectorySize();
+      setStorageUsage(formatBytes(bytes));
+    } catch {
+      setStorageUsage('—');
+    }
   };
 
   useFocusEffect(
@@ -315,13 +319,17 @@ export default observer(function SettingsScreen() {
           text: 'Delete All',
           style: 'destructive',
           onPress: async () => {
-            await releaseModel();
-            await syncInstalledModelsFromDevice();
-            const list = [...modelStore.installedModels];
-            for (const m of list) {
-              await deleteModelFile(m);
+            try {
+              await releaseModel();
+              await syncInstalledModelsFromDevice();
+              const list = [...modelStore.installedModels];
+              for (const m of list) {
+                await deleteModelFile(m);
+              }
+              refreshStorage();
+            } catch {
+              Alert.alert('Error', 'Failed to delete some models. Please try again.');
             }
-            refreshStorage();
           },
         },
       ],
@@ -366,7 +374,7 @@ export default observer(function SettingsScreen() {
               onPress={() => (navigation as any).navigate('Auth')}
             >
               <MaterialCommunityIcons name="login" size={20} color={Colors.onSurface} />
-              <Text style={styles.presetLabel}>Sign in</Text>
+              <Text style={styles.presetLabel}>Get Started</Text>
             </TouchableOpacity>
           ) : (
             <>
@@ -420,12 +428,6 @@ export default observer(function SettingsScreen() {
             secureTextEntry
             autoCapitalize="none"
             autoCorrect={false}
-            editable={authStore.isSignedIn && authStore.isEmailVerified}
-            onFocus={() => {
-              if (!authStore.isSignedIn || !authStore.isEmailVerified) {
-                (navigation as any).navigate('Auth');
-              }
-            }}
           />
         </View>
 
@@ -691,11 +693,56 @@ export default observer(function SettingsScreen() {
           <Text style={styles.dangerLabel}>Clear All Chats</Text>
         </TouchableOpacity>
 
-        {/* Delete all models (PDR) */}
+        {/* Delete all models */}
         <TouchableOpacity style={styles.dangerRow} onPress={handleDeleteAllModels}>
           <MaterialCommunityIcons name="database-off-outline" size={20} color={Colors.error} />
           <Text style={styles.dangerLabel}>Delete All Models</Text>
         </TouchableOpacity>
+
+        {authStore.isSignedIn && (
+          <>
+            <Text style={styles.sectionLabel}>ACCOUNT</Text>
+            <TouchableOpacity
+              style={styles.dangerRow}
+              onPress={() => {
+                Alert.alert(
+                  'Delete Account',
+                  'This will permanently delete your account, all conversations, and all downloaded models. This action cannot be undone.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Delete My Account',
+                      style: 'destructive',
+                      onPress: async () => {
+                        try {
+                          const deleted = await authStore.deleteAccount();
+                          if (!deleted) {
+                            Alert.alert('Error', authStore.error ?? 'Failed to delete account. Please try again or contact support.');
+                            return;
+                          }
+                          chatStore.clearAllChats();
+                          try {
+                            await releaseModel();
+                            const list = [...modelStore.installedModels];
+                            for (const m of list) {
+                              await deleteModelFile(m);
+                            }
+                          } catch {}
+                          Alert.alert('Account Deleted', 'Your account and all data have been permanently removed.');
+                        } catch {
+                          Alert.alert('Error', 'Failed to delete account. Please try again or contact support.');
+                        }
+                      },
+                    },
+                  ],
+                );
+              }}
+            >
+              <MaterialCommunityIcons name="account-remove-outline" size={20} color={Colors.error} />
+              <Text style={styles.dangerLabel}>Delete Account</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </ScrollView>
 
       {/* Inference Settings Modal */}

@@ -1,7 +1,9 @@
 import 'react-native-gesture-handler';
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { AppState, AppStateStatus, Linking, StyleSheet } from 'react-native';
+import { AppState, AppStateStatus, Linking, LogBox, StyleSheet } from 'react-native';
+
+LogBox.ignoreLogs(['Sending `onAnimatedValueUpdate` with no listeners registered']);
 import { NavigationContainer } from '@react-navigation/native';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';

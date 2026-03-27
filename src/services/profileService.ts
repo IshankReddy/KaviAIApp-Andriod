@@ -27,7 +27,7 @@ export async function ensureProfile(userId: string, email: string | undefined): 
     .select()
     .single();
   if (error) {
-    console.warn('[profileService] ensureProfile:', error.message);
+    if (__DEV__) console.warn('[profileService] ensureProfile:', error.message);
     return null;
   }
   return data as Profile;

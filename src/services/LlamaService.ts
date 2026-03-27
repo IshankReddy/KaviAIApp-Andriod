@@ -28,11 +28,11 @@ if (!isExpoGo) {
     const mod = require('llama.rn');
     if (mod?.initLlama) LlamaModule = mod;
   } catch (e) {
-    console.warn('[LlamaService] llama.rn not available:', e);
+    if (__DEV__) console.warn('[LlamaService] llama.rn not available:', e);
   }
 }
 
-if (!LlamaModule) {
+if (!LlamaModule && __DEV__) {
   console.warn('[LlamaService] On-device AI unavailable. Use a development build: npx expo run:ios');
 }
 
@@ -65,7 +65,7 @@ function pathForNative(pathOrUri: string): string {
 
 export async function initModel(modelPath: string): Promise<InitModelResult> {
   if (!LlamaModule) {
-    console.warn('[LlamaService] llama.rn not loaded');
+    if (__DEV__) console.warn('[LlamaService] llama.rn not loaded');
     return {
       success: false,
       errorMessage: isExpoGo ? LLAMA_UNAVAILABLE_MESSAGE : 'Native AI runtime not loaded.',
@@ -101,11 +101,11 @@ export async function initModel(modelPath: string): Promise<InitModelResult> {
       msg.includes('could not be found');
     if (isNativeUnavailable && LlamaModule) {
       LlamaModule = null;
-      console.warn('[LlamaService] Native module unavailable (e.g. Expo Go). Use a dev build to load models: npx expo run:ios');
+      if (__DEV__) console.warn('[LlamaService] Native module unavailable (e.g. Expo Go). Use a dev build to load models: npx expo run:ios');
       modelStore.setIsLoadingModel(false);
       return { success: false, errorMessage: LLAMA_UNAVAILABLE_MESSAGE };
     }
-    console.error('[LlamaService] initModel failed:', e);
+    if (__DEV__) console.error('[LlamaService] initModel failed:', e);
     modelStore.setIsLoadingModel(false);
     const friendly = msg.length > 200 ? msg.slice(0, 197) + '...' : msg;
     return { success: false, errorMessage: friendly };
@@ -182,7 +182,7 @@ function stripTemplateTokens(text: string): string {
 export async function generateResponse(systemPrompt: string): Promise<void> {
   const ctx = modelStore.llamaContext;
   if (!ctx) {
-    console.warn('[LlamaService] No context loaded');
+    if (__DEV__) console.warn('[LlamaService] No context loaded');
     return;
   }
 
@@ -266,7 +266,7 @@ export async function generateResponse(systemPrompt: string): Promise<void> {
       }),
     );
   } catch (e: any) {
-    console.error('[LlamaService] generation error:', e);
+    if (__DEV__) console.error('[LlamaService] generation error:', e);
     runInAction(() => chatStore.setIsGenerating(false));
   }
 }

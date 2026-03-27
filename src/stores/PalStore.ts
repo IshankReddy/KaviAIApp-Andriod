@@ -83,7 +83,7 @@ class PalStore {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(this.pals));
     } catch (e) {
-      console.error('Failed to save pals', e);
+      if (__DEV__) console.error('Failed to save pals', e);
     }
   }
 

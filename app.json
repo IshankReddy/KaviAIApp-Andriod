@@ -6,7 +6,7 @@
     "extra": {
       "verificationSuccessUrl": "https://project-s0syc-chta4448s-ishankreddys-projects.vercel.app/"
     },
-    "version": "1.0.0",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -19,12 +19,16 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.kaviai.app",
-      "buildNumber": "1",
+      "buildNumber": "3",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSAllowsLocalNetworking": true
+        },
         "CFBundleURLTypes": [
           {
-            "CFBundleURLSchemes": ["kaviai", "com.kaviai.app"]
+            "CFBundleURLSchemes": ["kaviai"]
           }
         ]
       },

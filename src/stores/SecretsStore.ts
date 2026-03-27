@@ -1,5 +1,5 @@
 import { makeAutoObservable, runInAction } from 'mobx';
-import { kvDel, kvGet, kvSet } from '../services/kv';
+import { secureDel, secureGet, secureSet } from '../services/secureKv';
 
 type SecretKey = 'hfToken' | 'openaiKey' | 'anthropicKey' | 'geminiKey';
 
@@ -25,10 +25,10 @@ class SecretsStore {
   async hydrate(): Promise<void> {
     try {
       const [hfToken, openaiKey, anthropicKey, geminiKey] = await Promise.all([
-        kvGet(KEYS.hfToken),
-        kvGet(KEYS.openaiKey),
-        kvGet(KEYS.anthropicKey),
-        kvGet(KEYS.geminiKey),
+        secureGet(KEYS.hfToken),
+        secureGet(KEYS.openaiKey),
+        secureGet(KEYS.anthropicKey),
+        secureGet(KEYS.geminiKey),
       ]);
       runInAction(() => {
         this.hfToken = hfToken ?? '';
@@ -51,8 +51,8 @@ class SecretsStore {
       if (key === 'anthropicKey') this.anthropicKey = cleaned;
       if (key === 'geminiKey') this.geminiKey = cleaned;
     });
-    if (cleaned) await kvSet(KEYS[key], cleaned);
-    else await kvDel(KEYS[key]);
+    if (cleaned) await secureSet(KEYS[key], cleaned);
+    else await secureDel(KEYS[key]);
   }
 }
 

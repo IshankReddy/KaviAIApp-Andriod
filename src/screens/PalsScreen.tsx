@@ -455,7 +455,7 @@ export default observer(function PalsScreen() {
   };
 
   const handleDelete = (pal: Pal) => {
-    Alert.alert('Delete Pal', `Delete "${pal.name}"?`, [
+    Alert.alert('Delete Prompt', `Delete "${pal.name}"?`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: () => palStore.deletePal(pal.id) },
     ]);
@@ -467,6 +467,21 @@ export default observer(function PalsScreen() {
     '🍳': '#84CC16', '🌍': '#06B6D4', '🎵': '#A855F7', '🤖': '#7C3AED',
   };
 
+  const EMOJI_ICON_MAP: Record<string, string> = {
+    '💻': 'laptop',
+    '📚': 'book-open-variant',
+    '✍️': 'pencil-outline',
+    '🎭': 'drama-masks',
+    '🧠': 'brain',
+    '🔬': 'microscope',
+    '🎨': 'palette',
+    '🏋️': 'dumbbell',
+    '🍳': 'silverware-fork-knife',
+    '🌍': 'earth',
+    '🎵': 'music-note',
+    '🤖': 'robot-outline',
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -476,7 +491,7 @@ export default observer(function PalsScreen() {
         >
           <MaterialCommunityIcons name="menu" size={22} color={Colors.onSurface} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Pals</Text>
+        <Text style={styles.headerTitle}>Prompt Lab</Text>
         <TouchableOpacity style={styles.headerBtn} onPress={openCreate}>
           <MaterialCommunityIcons name="plus" size={22} color={Colors.primary} />
         </TouchableOpacity>
@@ -489,7 +504,7 @@ export default observer(function PalsScreen() {
             <MaterialCommunityIcons name="star-four-points-outline" size={18} color={Colors.primary} />
           </View>
           <Text style={styles.introText}>
-            Pals are AI personas with custom personalities. Each has its own system prompt, temperature, and optional model.
+            Craft custom AI personas with tailored system prompts, temperature, and optional model preferences.
           </Text>
         </View>
 
@@ -498,18 +513,18 @@ export default observer(function PalsScreen() {
             <View style={styles.emptyIcon}>
               <MaterialCommunityIcons name="account-plus-outline" size={28} color={Colors.primary} />
             </View>
-            <Text style={styles.emptyTitle}>No Pals Yet</Text>
+            <Text style={styles.emptyTitle}>No Prompts Yet</Text>
             <Text style={styles.emptyDesc}>
-              Create your first AI persona to get started.{'\n'}Each Pal remembers its personality across chats.
+              Create your first AI persona to get started.{'\n'}Each prompt remembers its personality across chats.
             </Text>
             <TouchableOpacity style={styles.emptyBtn} onPress={openCreate} activeOpacity={0.8}>
               <MaterialCommunityIcons name="plus" size={18} color={Colors.onPrimary} />
-              <Text style={styles.emptyBtnText}>Create Pal</Text>
+              <Text style={styles.emptyBtnText}>Create Prompt</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <>
-            <Text style={styles.sectionLabel}>{palStore.pals.length} Pal{palStore.pals.length !== 1 ? 's' : ''}</Text>
+            <Text style={styles.sectionLabel}>{palStore.pals.length} Prompt{palStore.pals.length !== 1 ? 's' : ''}</Text>
 
             {palStore.pals.map(pal => {
               const accentColor = EMOJI_COLORS[pal.emoji] || Colors.primary;
@@ -518,7 +533,11 @@ export default observer(function PalsScreen() {
                   <View style={styles.palCardBody}>
                     <View style={styles.palTopRow}>
                       <View style={[styles.emojiCircle, { backgroundColor: accentColor + '18' }]}>
-                        <Text style={styles.palEmoji}>{pal.emoji}</Text>
+                        <MaterialCommunityIcons
+                          name={(EMOJI_ICON_MAP[pal.emoji] || 'robot-outline') as any}
+                          size={26}
+                          color={accentColor}
+                        />
                       </View>
                       <View style={styles.palInfo}>
                         <Text style={styles.palName}>{pal.name}</Text>
@@ -575,7 +594,7 @@ export default observer(function PalsScreen() {
       <Modal visible={createModal} animationType="slide" presentationStyle="pageSheet">
         <View style={styles.modal}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{editingPal ? 'Edit Pal' : 'Create Pal'}</Text>
+            <Text style={styles.modalTitle}>{editingPal ? 'Edit Prompt' : 'Create Prompt'}</Text>
             <TouchableOpacity onPress={() => setCreateModal(false)}>
               <MaterialCommunityIcons name="close" size={22} color={Colors.onSurface} />
             </TouchableOpacity>
@@ -583,15 +602,19 @@ export default observer(function PalsScreen() {
           <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.modalContent}>
             <Text style={[styles.fieldLabel, { marginTop: 0 }]}>Emoji</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled style={styles.emojiRow}>
-              {EMOJI_OPTIONS.map(e => (
-                <TouchableOpacity
-                  key={e}
-                  style={[styles.emojiOption, emoji === e && styles.emojiSelected]}
-                  onPress={() => setEmoji(e)}
-                >
-                  <Text style={styles.emojiOptionText}>{e}</Text>
-                </TouchableOpacity>
-              ))}
+              {EMOJI_OPTIONS.map(e => {
+                const iconName = EMOJI_ICON_MAP[e] || 'robot-outline';
+                const iconColor = emoji === e ? Colors.primary : Colors.onSurfaceVariant;
+                return (
+                  <TouchableOpacity
+                    key={e}
+                    style={[styles.emojiOption, emoji === e && styles.emojiSelected]}
+                    onPress={() => setEmoji(e)}
+                  >
+                    <MaterialCommunityIcons name={iconName as any} size={24} color={iconColor} />
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
 
             <Text style={styles.fieldLabel}>Name</Text>
@@ -661,7 +684,7 @@ export default observer(function PalsScreen() {
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.8}>
-              <Text style={styles.saveText}>{editingPal ? 'Save Changes' : 'Create Pal'}</Text>
+              <Text style={styles.saveText}>{editingPal ? 'Save Changes' : 'Create Prompt'}</Text>
             </TouchableOpacity>
           </View>
         </View>

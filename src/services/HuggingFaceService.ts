@@ -1,9 +1,8 @@
 /**
  * HuggingFaceService.ts
- * Search Hugging Face Hub for GGUF models.
+ * Search Hugging Face Hub for GGUF text-generation models.
  */
 
-import axios from 'axios';
 import { secretsStore } from '../stores/SecretsStore';
 
 const HF_API = 'https://huggingface.co/api';
@@ -39,70 +38,71 @@ export interface GGUFFile {
 }
 
 export async function searchGGUFModels(query: string, limit = 20): Promise<HFModel[]> {
-  try {
-    const res = await axios.get(`${HF_API}/models`, {
-      params: {
-        search: query,
-        filter: 'gguf',
-        sort: 'downloads',
-        direction: -1,
-        limit,
-      },
-      headers: getAuthHeaders(),
-      timeout: 10000,
-    });
-    return (res.data as any[]).map(m => ({
-      modelId: m.modelId,
-      author: m.author ?? '',
-      downloads: m.downloads ?? 0,
-      likes: m.likes ?? 0,
-      tags: m.tags ?? [],
-      description: m.cardData?.description ?? '',
-    }));
-  } catch (e) {
-    console.error('[HuggingFaceService] searchGGUFModels error:', e);
-    return [];
+  const params = new URLSearchParams({
+    search: query,
+    filter: 'gguf',
+    pipeline_tag: 'text-generation',
+    sort: 'downloads',
+    direction: '-1',
+    limit: String(limit),
+  });
+  const url = `${HF_API}/models?${params.toString()}`;
+  const res = await fetch(url, {
+    headers: { ...getAuthHeaders(), Accept: 'application/json' },
+  });
+  if (!res.ok) {
+    throw new Error(`Hugging Face search failed (${res.status})`);
   }
+  const data: any[] = await res.json();
+  return data.map(m => ({
+    modelId: m.id ?? m.modelId ?? '',
+    author: m.author ?? '',
+    downloads: m.downloads ?? 0,
+    likes: m.likes ?? 0,
+    tags: m.tags ?? [],
+    description: m.cardData?.description ?? '',
+  }));
 }
 
 export async function getGGUFFiles(repoId: string): Promise<GGUFFile[]> {
-  try {
-    const res = await axios.get(`${HF_API}/models/${repoId}`, {
-      headers: getAuthHeaders(),
-      timeout: 10000,
-    });
-    const siblings: any[] = res.data.siblings ?? [];
-    const baseUrl = `https://huggingface.co/${repoId}/resolve/main/`;
-    return siblings
-      .filter(f => f.rfilename?.endsWith('.gguf'))
-      .map(f => {
-        const size = f.size ?? 0;
-        const url = baseUrl + f.rfilename;
-        return {
-          filename: f.rfilename,
-          size,
-          sizeLabel: formatBytes(size),
-          downloadUrl: withToken(url),
-        };
-      });
-  } catch (e) {
-    console.error('[HuggingFaceService] getGGUFFiles error:', e);
-    return [];
+  const url = `${HF_API}/models/${repoId}`;
+  const res = await fetch(url, {
+    headers: { ...getAuthHeaders(), Accept: 'application/json' },
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch repo info (${res.status})`);
   }
+  const data = await res.json();
+  const siblings: any[] = data.siblings ?? [];
+  const baseUrl = `https://huggingface.co/${repoId}/resolve/main/`;
+  return siblings
+    .filter(f => f.rfilename?.endsWith('.gguf'))
+    .map(f => {
+      const size = f.size ?? 0;
+      const dlUrl = baseUrl + f.rfilename;
+      return {
+        filename: f.rfilename,
+        size,
+        sizeLabel: formatBytes(size),
+        downloadUrl: withToken(dlUrl),
+      };
+    });
 }
 
 export async function getModelCard(repoId: string): Promise<{ description: string; author: string; tags: string[] }> {
   try {
-    const res = await axios.get(`${HF_API}/models/${repoId}`, {
-      headers: getAuthHeaders(),
-      timeout: 10000,
+    const url = `${HF_API}/models/${repoId}`;
+    const res = await fetch(url, {
+      headers: { ...getAuthHeaders(), Accept: 'application/json' },
     });
+    if (!res.ok) return { description: '', author: '', tags: [] };
+    const data = await res.json();
     return {
-      description: res.data.cardData?.description ?? '',
-      author: res.data.author ?? '',
-      tags: res.data.tags ?? [],
+      description: data.cardData?.description ?? '',
+      author: data.author ?? '',
+      tags: data.tags ?? [],
     };
-  } catch (e) {
+  } catch {
     return { description: '', author: '', tags: [] };
   }
 }

@@ -19,7 +19,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { secretsStore } from '../stores/SecretsStore';
 import { authStore } from '../stores/AuthStore';
 
-const LOGO = require('../../assets/logo.png');
+const LOGO_DARK = require('../../assets/logo-dark.png');
+const LOGO_LIGHT = require('../../assets/logo-light.png');
 
 function shortModelName(displayName: string): string {
   const match = displayName.match(/^([A-Za-z]+)/);
@@ -33,7 +34,7 @@ const CAPABILITIES = [
 ];
 
 export default observer(function ChatScreen() {
-  const { Colors } = useTheme();
+  const { Colors, dark } = useTheme();
   const navigation = useNavigation();
   const flatRef = useRef<FlatList>(null);
   const styles = useMemo(() => StyleSheet.create({
@@ -315,7 +316,7 @@ export default observer(function ChatScreen() {
 
   const handleChatMenu = () => {
     if (activeConv) {
-      Alert.alert('Chat', undefined, [
+      Alert.alert('Chat Options', 'What would you like to do?', [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Clear Conversation',
@@ -372,7 +373,7 @@ export default observer(function ChatScreen() {
       {!hasModels && !isCloudBackend ? (
         <View style={styles.emptyState}>
           <View style={styles.logoWrap}>
-            <Image source={LOGO} style={styles.logo} resizeMode="contain" />
+            <Image source={dark ? LOGO_DARK : LOGO_LIGHT} style={styles.logo} resizeMode="contain" />
           </View>
           <Text style={styles.emptyTitle}>Welcome to KaviAI</Text>
           <Text style={styles.emptySubtitle}>
@@ -479,7 +480,7 @@ export default observer(function ChatScreen() {
                     ? `Message ${shortModelName(modelStore.activeModel.displayName)}`
                     : 'Message KaviAI')
             }
-            onPlusPress={() => (navigation as any).navigate('Pals')}
+            onPlusPress={() => (navigation as any).navigate('Prompt Lab')}
             isGenerating={isGenerating}
             onStop={stopGeneration}
           />

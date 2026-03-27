@@ -1,0 +1,138 @@
+import React, { useMemo } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme, DesignTokens } from '../theme/theme';
+
+export default function TermsScreen() {
+  const navigation = useNavigation();
+  const { Colors } = useTheme();
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: Colors.background },
+    header: {
+      flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface,
+      paddingTop: Platform.OS === 'ios' ? 60 : 16, paddingBottom: 14, paddingHorizontal: 16,
+      borderBottomWidth: 1, borderBottomColor: Colors.border,
+    },
+    headerBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: DesignTokens.borderRadius.sm },
+    headerTitle: { flex: 1, textAlign: 'center', color: Colors.onSurface, fontSize: 17, fontWeight: '800', letterSpacing: -0.3 },
+    content: { padding: 20, paddingBottom: 60 },
+    date: { color: Colors.metaText, fontSize: 13, fontWeight: '600', marginBottom: 20 },
+    highlight: {
+      backgroundColor: Colors.primary + '10', borderLeftWidth: 3, borderLeftColor: Colors.primary,
+      padding: 16, borderRadius: 8, marginBottom: 24,
+    },
+    highlightText: { color: Colors.primary, fontSize: 14, fontWeight: '700', lineHeight: 20 },
+    h2: { color: Colors.onSurface, fontSize: 17, fontWeight: '800', marginTop: 28, marginBottom: 10, letterSpacing: -0.2 },
+    p: { color: Colors.onSurfaceVariant, fontSize: 14, lineHeight: 22, fontWeight: '500', marginBottom: 14 },
+    bold: { fontWeight: '700', color: Colors.onSurface },
+    bullet: { color: Colors.onSurfaceVariant, fontSize: 14, lineHeight: 22, fontWeight: '500', marginBottom: 8, paddingLeft: 8 },
+    caps: { color: Colors.onSurfaceVariant, fontSize: 13, lineHeight: 20, fontWeight: '500', marginBottom: 14, fontStyle: 'italic' },
+    footer: { color: Colors.metaText, fontSize: 12, textAlign: 'center', marginTop: 32, opacity: 0.6 },
+  }), [Colors]);
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.headerBtn} onPress={() => (navigation as any).navigate('App Info')}>
+          <MaterialCommunityIcons name="arrow-left" size={22} color={Colors.onSurface} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Terms of Service</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Text style={styles.date}>Effective: March 10, 2026 · Updated: March 21, 2026</Text>
+
+        <Text style={styles.p}>
+          By downloading, installing, or using KaviAI ("the app"), you agree to be bound by these Terms of Service. If you do not agree, do not use the app.
+        </Text>
+
+        <Text style={styles.h2}>1. Overview</Text>
+        <Text style={styles.p}>
+          KaviAI is a mobile application that enables you to run AI language models locally on your device for private, on-device inference. The app also optionally supports cloud-based AI providers through your own API keys.
+        </Text>
+
+        <Text style={styles.h2}>2. Eligibility</Text>
+        <Text style={styles.p}>
+          You must be at least 13 years old (or 16 in the EEA) to use KaviAI. By using the app, you represent that you meet this requirement.
+        </Text>
+
+        <Text style={styles.h2}>3. User Accounts</Text>
+        <Text style={styles.bullet}>• You may create an account using your email address.</Text>
+        <Text style={styles.bullet}>• You are responsible for maintaining the confidentiality of your credentials.</Text>
+        <Text style={styles.bullet}>• You agree to provide accurate information and update it as necessary.</Text>
+        <Text style={styles.bullet}>• You are responsible for all activity under your account.</Text>
+
+        <Text style={styles.h2}>4. Acceptable Use</Text>
+        <Text style={styles.p}>You agree not to use KaviAI to:</Text>
+        <Text style={styles.bullet}>• Generate illegal, harmful, threatening, abusive, or defamatory content.</Text>
+        <Text style={styles.bullet}>• Violate the intellectual property or privacy rights of others.</Text>
+        <Text style={styles.bullet}>• Distribute malware, spam, or disrupt the app's services.</Text>
+        <Text style={styles.bullet}>• Reverse-engineer or decompile the app beyond what applicable law permits.</Text>
+        <Text style={styles.bullet}>• Violate any applicable local, state, national, or international law.</Text>
+
+        <View style={styles.highlight}>
+          <Text style={styles.highlightText}>
+            You are solely responsible for the prompts you provide and the outputs generated by AI models. KaviAI does not monitor or control AI-generated content.
+          </Text>
+        </View>
+
+        <Text style={styles.h2}>5. AI-Generated Content</Text>
+        <Text style={styles.p}>AI models may produce inaccurate, incomplete, biased, or inappropriate content. You acknowledge that:</Text>
+        <Text style={styles.bullet}>• AI outputs should not be relied upon as professional advice (medical, legal, financial, etc.).</Text>
+        <Text style={styles.bullet}>• You are responsible for reviewing and verifying any AI-generated content.</Text>
+        <Text style={styles.bullet}>• KaviAI makes no representations about the accuracy of AI outputs.</Text>
+
+        <Text style={styles.h2}>6. Third-Party API Keys</Text>
+        <Text style={styles.p}>If you use cloud AI services through your own API keys:</Text>
+        <Text style={styles.bullet}>• You are subject to the terms of the respective provider (OpenAI, Anthropic, Google).</Text>
+        <Text style={styles.bullet}>• You are solely responsible for any costs incurred through your API keys.</Text>
+        <Text style={styles.bullet}>• KaviAI is not liable for issues arising from your use of third-party services.</Text>
+
+        <Text style={styles.h2}>7. Open-Source Models</Text>
+        <Text style={styles.p}>
+          AI models downloaded through the app are open-source and governed by their respective licenses (e.g., Apache 2.0, MIT, Gemma License). You agree to comply with the license terms of any model you download.
+        </Text>
+
+        <Text style={styles.h2}>8. Intellectual Property</Text>
+        <Text style={styles.p}>
+          KaviAI and its original content, features, branding, and functionality are owned by KAVI.ai and protected by copyright and intellectual property laws. Open-source components are governed by their respective licenses.
+        </Text>
+
+        <Text style={styles.h2}>9. Disclaimer of Warranties</Text>
+        <Text style={styles.caps}>
+          The app is provided "as is" and "as available" without warranties of any kind, express or implied, including but not limited to implied warranties of merchantability, fitness for a particular purpose, and non-infringement.
+        </Text>
+
+        <Text style={styles.h2}>10. Limitation of Liability</Text>
+        <Text style={styles.caps}>
+          To the maximum extent permitted by law, KAVI.ai shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the app, including loss of data, loss of profits, or damages from AI-generated content.
+        </Text>
+
+        <Text style={styles.h2}>11. Indemnification</Text>
+        <Text style={styles.p}>
+          You agree to indemnify and hold harmless KAVI.ai from any claims, damages, or expenses arising from your use of the app, violation of these Terms, or violation of any third-party rights.
+        </Text>
+
+        <Text style={styles.h2}>12. Termination</Text>
+        <Text style={styles.p}>
+          We reserve the right to suspend or terminate your account at any time. Upon termination, your right to use the app ceases immediately.
+        </Text>
+
+        <Text style={styles.h2}>13. Changes</Text>
+        <Text style={styles.p}>
+          We may modify these Terms at any time. Continued use after changes constitutes acceptance. We encourage you to review these Terms periodically.
+        </Text>
+
+        <Text style={styles.h2}>14. Contact</Text>
+        <Text style={styles.p}>
+          Questions? Contact us at: <Text style={styles.bold}>kaviai.app@gmail.com</Text>
+        </Text>
+
+        <Text style={styles.footer}>© KAVI.ai 2026. All rights reserved.</Text>
+      </ScrollView>
+    </View>
+  );
+}

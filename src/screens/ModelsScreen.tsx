@@ -36,6 +36,7 @@ const ALL_CLOUD_MODELS: CloudModel[] = [
 const PARAM_SLIDER_MIN = 0;
 const PARAM_SLIDER_STEP = 0.1;
 
+
 interface CategoryDef {
   key: ModelCategory;
   label: string;
@@ -48,11 +49,11 @@ const CATEGORIES: CategoryDef[] = [
   { key: 'coding',    label: 'Coding',         icon: 'code-braces',             color: '#6366F1', desc: 'Write & debug code' },
   { key: 'chat',      label: 'Chat',           icon: 'chat-processing-outline', color: '#8B5CF6', desc: 'General conversation' },
   { key: 'reasoning', label: 'Reasoning',      icon: 'brain',                   color: '#EC4899', desc: 'Logic & math' },
-  { key: 'image',     label: 'Image',          icon: 'image-outline',           color: '#F59E0B', desc: 'Vision & generation' },
-  { key: 'audio',     label: 'Audio',          icon: 'waveform',                color: '#10B981', desc: 'Speech & sound' },
+  { key: 'writing',   label: 'Writing',        icon: 'pencil-outline',          color: '#F59E0B', desc: 'Creative & content' },
+  { key: 'math',      label: 'Math',           icon: 'calculator-variant',      color: '#10B981', desc: 'Calculations & proofs' },
   { key: 'health',    label: 'Health',         icon: 'heart-pulse',             color: '#EF4444', desc: 'Medical & wellness' },
   { key: 'news',      label: 'News',           icon: 'newspaper-variant-outline', color: '#0EA5E9', desc: 'Summaries & digest' },
-  { key: 'video',     label: 'Video',          icon: 'play-circle-outline',     color: '#F97316', desc: 'Video understanding' },
+  { key: 'education', label: 'Education',      icon: 'school-outline',          color: '#F97316', desc: 'Learning & tutoring' },
 ];
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -118,7 +119,7 @@ export default observer(function ModelsScreen() {
     },
     headerBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: DesignTokens.borderRadius.sm },
     headerTitle: { flex: 1, textAlign: 'center', color: Colors.onSurface, fontSize: 17, fontWeight: '800', letterSpacing: -0.3 },
-    content: { paddingHorizontal: GRID_PAD, paddingBottom: 100 },
+    content: { paddingTop: 14, paddingHorizontal: GRID_PAD, paddingBottom: 100 },
 
     filterBar: { flexDirection: 'row', marginBottom: 16 },
     filterChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border },
@@ -198,10 +199,22 @@ export default observer(function ModelsScreen() {
     manageSummaryText: { color: Colors.onSurfaceVariant, fontSize: 13, fontWeight: '600', flex: 1 },
     manageSummaryValue: { color: Colors.primary, fontSize: 14, fontWeight: '800' },
 
-    fab: { position: 'absolute', right: 20, bottom: 28, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, height: 50, borderRadius: 25, overflow: 'hidden',
-      ...Platform.select({ ios: { shadowColor: Colors.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 10 }, android: { elevation: 8 } }) },
-    fabGradient: { flexDirection: 'row', alignItems: 'center', gap: 8, width: '100%', height: '100%', paddingHorizontal: 18, justifyContent: 'center' },
-    fabText: { color: Colors.onPrimary, fontSize: 14, fontWeight: '700' },
+    fab: {
+      position: 'absolute',
+      bottom: 28,
+      alignSelf: 'center',
+      left: GRID_PAD,
+      right: GRID_PAD,
+      height: 48,
+      borderRadius: 14,
+      overflow: 'hidden',
+      ...Platform.select({
+        ios: { shadowColor: Colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+        android: { elevation: 6 },
+      }),
+    },
+    fabGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, flex: 1, paddingHorizontal: 20 },
+    fabText: { color: Colors.onPrimary, fontSize: 14, fontWeight: '700', letterSpacing: -0.1 },
 
     modal: { flex: 1, backgroundColor: Colors.background, padding: 16 },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: Platform.OS === 'ios' ? 42 : 8, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: Colors.border, marginBottom: 16 },
@@ -219,7 +232,11 @@ export default observer(function ModelsScreen() {
   }), [Colors]);
 
   // ---- Handlers ----
-  const handleDownload = useCallback(async (model: CuratedModel) => { await downloadModel(model, () => {}); }, []);
+  const handleDownload = useCallback(async (model: CuratedModel) => {
+    try { await downloadModel(model, () => {}); } catch (e: any) {
+      Alert.alert('Download Failed', e?.message ?? 'Could not download the model.');
+    }
+  }, []);
   const handleCancelDownload = useCallback(async (modelId: string) => { await cancelDownload(modelId); }, []);
   const handleLoad = useCallback(async (modelId: string) => {
     const model = modelStore.installedModels.find(m => m.id === modelId);
@@ -272,16 +289,27 @@ export default observer(function ModelsScreen() {
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
     setSearching(true);
-    const results = await searchGGUFModels(searchQuery);
-    setSearchResults(results);
-    setSearching(false);
+    try {
+      const results = await searchGGUFModels(searchQuery);
+      setSearchResults(results);
+    } catch (e: any) {
+      Alert.alert('Search Failed', e?.message ?? 'Could not search Hugging Face. Check your connection.');
+    } finally {
+      setSearching(false);
+    }
   };
   const handleSelectRepo = async (repoId: string) => {
     setSelectedRepo(repoId);
     setLoadingFiles(true);
-    const files = await getGGUFFiles(repoId);
-    setGgufFiles(files);
-    setLoadingFiles(false);
+    try {
+      const files = await getGGUFFiles(repoId);
+      setGgufFiles(files);
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Could not load GGUF files for this repo.');
+      setSelectedRepo(null);
+    } finally {
+      setLoadingFiles(false);
+    }
   };
   const handleAddCustomModel = async (file: any, repoId: string) => {
     const id = repoId.replace('/', '-') + '-' + file.filename.replace('.gguf', '');
@@ -293,7 +321,9 @@ export default observer(function ModelsScreen() {
     };
     setSearchModal(false);
     setSelectedRepo(null);
-    await downloadModel(custom, () => {});
+    try { await downloadModel(custom, () => {}); } catch (e: any) {
+      Alert.alert('Download Failed', e?.message ?? 'Could not download the model.');
+    }
   };
 
   // ---- Derived data ----
@@ -580,9 +610,16 @@ export default observer(function ModelsScreen() {
         {activeFilter === 'ondevice' && !selectedCategory && (
           <>
             {renderListControls()}
-            {onDeviceModels.map(model => (
-              <ModelCard key={model.id} model={model} onDownload={handleDownload} onCancelDownload={handleCancelDownload} onLoad={handleLoad} onDelete={handleDelete} onChat={handleChat} />
-            ))}
+            {onDeviceModels.length === 0 ? (
+              <View style={styles.emptyCard}>
+                <MaterialCommunityIcons name="package-variant" size={28} color={Colors.onSurfaceVariant} />
+                <Text style={styles.emptyCardText}>No models match your filters.{'\n'}Try adjusting the search or parameter range.</Text>
+              </View>
+            ) : (
+              onDeviceModels.map(model => (
+                <ModelCard key={model.id} model={model} onDownload={handleDownload} onCancelDownload={handleCancelDownload} onLoad={handleLoad} onDelete={handleDelete} onChat={handleChat} />
+              ))
+            )}
           </>
         )}
 
@@ -612,10 +649,11 @@ export default observer(function ModelsScreen() {
       </ScrollView>
 
       {/* FAB */}
-      <TouchableOpacity style={styles.fab} onPress={() => setSearchModal(true)} activeOpacity={0.8}>
+      <TouchableOpacity style={styles.fab} onPress={() => setSearchModal(true)} activeOpacity={0.85}>
         <LinearGradient colors={Colors.primaryGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.fabGradient}>
-          <MaterialCommunityIcons name="web" size={18} color={Colors.onPrimary} />
-          <Text style={styles.fabText}>Find Models on Hugging Face</Text>
+          <MaterialCommunityIcons name="magnify" size={18} color={Colors.onPrimary} />
+          <Text style={styles.fabText}>Search Hugging Face Models</Text>
+          <MaterialCommunityIcons name="arrow-right" size={16} color={Colors.onPrimary} style={{ opacity: 0.7 }} />
         </LinearGradient>
       </TouchableOpacity>
 

@@ -7,14 +7,20 @@ import { useNavigation, DrawerActions } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme, DesignTokens } from '../theme/theme';
 
-const APP_VERSION = '1.0.0';
-const LOGO = require('../../assets/logo.png');
+const APP_VERSION = '1.0.2';
+const LOGO_DARK = require('../../assets/logo-dark.png');
+const LOGO_LIGHT = require('../../assets/logo-light.png');
 
-const LINKS = [
-  { label: 'GitHub Repository', url: 'https://github.com/IshankReddy/KaviAIApp', icon: 'github' as const },
-  { label: 'Hugging Face Hub', url: 'https://huggingface.co', icon: 'robot-outline' as const },
-  { label: 'Privacy Policy', url: 'https://ishankreddy.github.io/KaviAIApp/privacy', icon: 'shield-lock-outline' as const },
-  { label: 'Terms of Service', url: 'https://ishankreddy.github.io/KaviAIApp/terms', icon: 'file-document-outline' as const },
+const EXTERNAL_LINKS = [
+  { label: 'GitHub', url: 'https://github.com/KaviAIAgentic', icon: 'github' as const },
+  { label: 'Hugging Face', url: 'https://huggingface.co/kaviwebdesigns', icon: 'robot-outline' as const },
+  { label: 'YouTube', url: 'https://www.youtube.com/@kaviwebdesigns', icon: 'youtube' as const },
+  { label: 'LinkedIn', url: 'https://www.linkedin.com/company/kavi-ai/', icon: 'linkedin' as const },
+];
+
+const LEGAL_LINKS = [
+  { label: 'Privacy Policy', screen: 'Privacy Policy', icon: 'shield-lock-outline' as const },
+  { label: 'Terms of Service', screen: 'Terms', icon: 'file-document-outline' as const },
 ];
 
 const LICENSES = [
@@ -28,7 +34,7 @@ const LICENSES = [
 
 export default function AppInfoScreen() {
   const navigation = useNavigation();
-  const { Colors } = useTheme();
+  const { Colors, dark } = useTheme();
   const styles = useMemo(() => StyleSheet.create({
     container: { flex: 1, backgroundColor: Colors.background },
     header: {
@@ -248,7 +254,7 @@ export default function AppInfoScreen() {
         {/* App identity */}
         <View style={styles.appBanner}>
           <View style={styles.appLogoWrap}>
-            <Image source={LOGO} style={styles.appLogo} resizeMode="contain" />
+            <Image source={dark ? LOGO_DARK : LOGO_LIGHT} style={styles.appLogo} resizeMode="contain" />
           </View>
           <Text style={styles.appName}>KaviAI</Text>
           <Text style={styles.appTagline}>On-device AI, entirely private</Text>
@@ -280,9 +286,9 @@ export default function AppInfoScreen() {
           </View>
         </View>
 
-        {/* Links */}
-        <Text style={styles.sectionLabel}>LINKS</Text>
-        {LINKS.map(link => (
+        {/* Social Links */}
+        <Text style={styles.sectionLabel}>CONNECT</Text>
+        {EXTERNAL_LINKS.map(link => (
           <TouchableOpacity
             key={link.url}
             style={styles.linkRow}
@@ -291,6 +297,20 @@ export default function AppInfoScreen() {
             <MaterialCommunityIcons name={link.icon} size={18} color={Colors.onSurfaceVariant} />
             <Text style={styles.linkText}>{link.label}</Text>
             <MaterialCommunityIcons name="open-in-new" size={14} color={Colors.metaText} />
+          </TouchableOpacity>
+        ))}
+
+        {/* Legal */}
+        <Text style={styles.sectionLabel}>LEGAL</Text>
+        {LEGAL_LINKS.map(link => (
+          <TouchableOpacity
+            key={link.screen}
+            style={styles.linkRow}
+            onPress={() => (navigation as any).navigate(link.screen)}
+          >
+            <MaterialCommunityIcons name={link.icon} size={18} color={Colors.onSurfaceVariant} />
+            <Text style={styles.linkText}>{link.label}</Text>
+            <MaterialCommunityIcons name="chevron-right" size={18} color={Colors.metaText} />
           </TouchableOpacity>
         ))}
 

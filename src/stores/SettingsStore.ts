@@ -68,7 +68,7 @@ class SettingsStore {
         }
       }
     } catch (e) {
-      console.error('Failed to load settings', e);
+      if (__DEV__) console.error('Failed to load settings', e);
     }
   }
 
@@ -79,7 +79,7 @@ class SettingsStore {
         app: this.app,
       }));
     } catch (e) {
-      console.error('Failed to save settings', e);
+      if (__DEV__) console.error('Failed to save settings', e);
     }
   }
 

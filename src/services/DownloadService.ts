@@ -138,12 +138,23 @@ export async function downloadModel(
     modelStore.setDownloadProgress(curatedModel.id, 0);
   });
 
+  let lastReportedPct = -1;
+  let lastProgressTime = 0;
+  const PROGRESS_THROTTLE_MS = 500;
+
   const progressCallback = (progress: FileSystem.DownloadProgressData) => {
+    const now = Date.now();
+    if (now - lastProgressTime < PROGRESS_THROTTLE_MS) return;
+
     const written = progress.totalBytesWritten ?? 0;
     const expected =
       progress.totalBytesExpectedToWrite ?? curatedModel.sizeBytes ?? 1;
     const pct = expected > 0 ? Math.round((written / expected) * 100) : 0;
     const clamped = Math.min(100, Math.max(0, pct));
+    if (clamped === lastReportedPct) return;
+
+    lastReportedPct = clamped;
+    lastProgressTime = now;
     runInAction(() => {
       modelStore.setDownloadProgress(curatedModel.id, clamped);
       onProgress(clamped);
@@ -190,7 +201,7 @@ export async function downloadModel(
       const wasCancelled = cancelledDownloadIds.has(curatedModel.id);
       if (wasCancelled) break;
       if (i === 0 && urlsToTry.length > 1) {
-        console.warn('[DownloadService] Resolved URL failed, retrying with original URL:', e?.message || e);
+        if (__DEV__) console.warn('[DownloadService] Resolved URL failed, retrying:', e?.message || e);
         try {
           const info = await FileSystem.getInfoAsync(destPath);
           if (info.exists) await FileSystem.deleteAsync(destPath);
@@ -198,7 +209,7 @@ export async function downloadModel(
         runInAction(() => modelStore.setDownloadProgress(curatedModel.id, 0));
         continue;
       }
-      console.error('[DownloadService] Download error:', e);
+      if (__DEV__) console.error('[DownloadService] Download error:', e);
       runInAction(() => modelStore.clearDownloadProgress(curatedModel.id));
       try {
         const info = await FileSystem.getInfoAsync(destPath);
@@ -232,7 +243,7 @@ export async function deleteModelFile(model: Model): Promise<void> {
     const info = await FileSystem.getInfoAsync(model.filePath);
     if (info.exists) await FileSystem.deleteAsync(model.filePath);
   } catch (e) {
-    console.error('[DownloadService] Delete error:', e);
+    if (__DEV__) console.error('[DownloadService] Delete error:', e);
   }
   runInAction(() => modelStore.removeModel(model.id));
 }
@@ -313,7 +324,7 @@ export async function syncInstalledModelsFromDevice(): Promise<boolean> {
     // Expo dev-client can call into FileSystem before the permissions/FS bridge is fully ready on cold start.
     // In that case we return false and let callers retry silently.
     if (msg.includes('Permissions module not found')) return false;
-    console.warn('[DownloadService] syncInstalledModelsFromDevice:', msg);
+    if (__DEV__) console.warn('[DownloadService] syncInstalledModelsFromDevice:', msg);
     return false;
   }
 }

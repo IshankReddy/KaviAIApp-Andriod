@@ -152,13 +152,13 @@ export default observer(function LoginScreen() {
           <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()}>
             <MaterialCommunityIcons name="close" size={22} color={Colors.onSurface} />
           </TouchableOpacity>
-          <Text style={styles.topTitle}>{route?.params?.mode === 'signup' ? 'Create account' : 'Account'}</Text>
+          <Text style={styles.topTitle}>Account</Text>
           <View style={{ width: 40 }} />
         </View>
 
-        <Text style={styles.title}>Sign in</Text>
+        <Text style={styles.title}>Welcome</Text>
         <Text style={styles.subtitle}>
-          Sign in to access gated Hugging Face models and cloud chat (ChatGPT, Claude, Gemini).
+          Sign in or create an account to access gated Hugging Face models and cloud AI (ChatGPT, Claude, Gemini).
         </Text>
 
         <View style={styles.card}>
@@ -190,14 +190,14 @@ export default observer(function LoginScreen() {
               onPress={onSignUp}
               disabled={!canSubmit}
             >
-              <Text style={styles.btnTextSecondary}>{authStore.isLoading ? 'Working\u2026' : 'Sign up'}</Text>
+              <Text style={styles.btnTextSecondary}>{authStore.isLoading ? 'Working\u2026' : 'Create Account'}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.btn, styles.btnPrimary, !canSubmit && { opacity: 0.6 }]}
               onPress={onSignIn}
               disabled={!canSubmit}
             >
-              <Text style={styles.btnTextPrimary}>{authStore.isLoading ? 'Working\u2026' : 'Sign in'}</Text>
+              <Text style={styles.btnTextPrimary}>{authStore.isLoading ? 'Working\u2026' : 'Sign In'}</Text>
             </TouchableOpacity>
           </View>
 

@@ -202,7 +202,7 @@ export default observer(function BenchmarkScreen() {
         >
           <MaterialCommunityIcons name="menu" size={22} color={Colors.onSurface} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Benchmark</Text>
+        <Text style={styles.headerTitle}>Evaluation</Text>
         <View style={{ width: 40 }} />
       </View>
 

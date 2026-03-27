@@ -19,7 +19,7 @@ export interface Model {
   isLoaded: boolean;
 }
 
-export type ModelCategory = 'coding' | 'chat' | 'reasoning' | 'image' | 'video' | 'audio' | 'health' | 'news';
+export type ModelCategory = 'coding' | 'chat' | 'reasoning' | 'writing' | 'math' | 'education' | 'health' | 'news';
 
 export interface CuratedModel {
   id: string;
@@ -63,7 +63,7 @@ export const CURATED_MODELS: CuratedModel[] = [
     hfRepoId: 'QuantFactory/SmolLM2-360M-Instruct-GGUF',
     hfUrl: 'https://huggingface.co/QuantFactory/SmolLM2-360M-Instruct-GGUF',
     downloadUrl: 'https://huggingface.co/QuantFactory/SmolLM2-360M-Instruct-GGUF/resolve/main/SmolLM2-360M-Instruct.Q4_0.gguf',
-    categories: ['chat'],
+    categories: ['chat', 'writing'],
   },
   {
     id: 'tinyllama-1.1b-q4km',
@@ -78,7 +78,7 @@ export const CURATED_MODELS: CuratedModel[] = [
     hfRepoId: 'TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF',
     hfUrl: 'https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF',
     downloadUrl: 'https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf',
-    categories: ['chat'],
+    categories: ['chat', 'writing'],
   },
   {
     id: 'smollm2-1.7b-q4km',
@@ -93,7 +93,7 @@ export const CURATED_MODELS: CuratedModel[] = [
     hfRepoId: 'HuggingFaceTB/SmolLM2-1.7B-Instruct-GGUF',
     hfUrl: 'https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct-GGUF',
     downloadUrl: 'https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct-GGUF/resolve/main/smollm2-1.7b-instruct-q4_k_m.gguf',
-    categories: ['chat', 'news'],
+    categories: ['chat', 'news', 'health', 'writing', 'education'],
   },
   {
     id: 'smollm2-360m-instruct-q8',
@@ -108,7 +108,7 @@ export const CURATED_MODELS: CuratedModel[] = [
     hfRepoId: 'HuggingFaceTB/SmolLM2-360M-Instruct-GGUF',
     hfUrl: 'https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct-GGUF',
     downloadUrl: 'https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct-GGUF/resolve/main/smollm2-360m-instruct-q8_0.gguf',
-    categories: ['chat'],
+    categories: ['chat', 'writing'],
   },
   {
     id: 'qwen2.5-1.5b-q8',
@@ -123,7 +123,7 @@ export const CURATED_MODELS: CuratedModel[] = [
     hfRepoId: 'Qwen/Qwen2.5-1.5B-Instruct-GGUF',
     hfUrl: 'https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF',
     downloadUrl: 'https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q8_0.gguf',
-    categories: ['coding', 'reasoning', 'chat'],
+    categories: ['coding', 'reasoning', 'chat', 'health', 'education', 'math'],
   },
   {
     id: 'gemma-2-2b-q6k',
@@ -138,7 +138,7 @@ export const CURATED_MODELS: CuratedModel[] = [
     hfRepoId: 'bartowski/gemma-2-2b-it-GGUF',
     hfUrl: 'https://huggingface.co/bartowski/gemma-2-2b-it-GGUF',
     downloadUrl: 'https://huggingface.co/bartowski/gemma-2-2b-it-GGUF/resolve/main/gemma-2-2b-it-Q6_K.gguf',
-    categories: ['chat', 'reasoning', 'news'],
+    categories: ['chat', 'reasoning', 'news', 'health', 'education', 'writing'],
   },
   {
     id: 'phi-3.5-mini-q4km',
@@ -153,7 +153,7 @@ export const CURATED_MODELS: CuratedModel[] = [
     hfRepoId: 'bartowski/Phi-3.5-mini-instruct-GGUF',
     hfUrl: 'https://huggingface.co/bartowski/Phi-3.5-mini-instruct-GGUF',
     downloadUrl: 'https://huggingface.co/bartowski/Phi-3.5-mini-instruct-GGUF/resolve/main/Phi-3.5-mini-instruct-Q4_K_M.gguf',
-    categories: ['coding', 'reasoning'],
+    categories: ['coding', 'reasoning', 'math'],
   },
   {
     id: 'deepseek-r1-distill-1.5b-q4_0',
@@ -168,7 +168,7 @@ export const CURATED_MODELS: CuratedModel[] = [
     hfRepoId: 'ggml-org/DeepSeek-R1-Distill-Qwen-1.5B-Q4_0-GGUF',
     hfUrl: 'https://huggingface.co/ggml-org/DeepSeek-R1-Distill-Qwen-1.5B-Q4_0-GGUF',
     downloadUrl: 'https://huggingface.co/ggml-org/DeepSeek-R1-Distill-Qwen-1.5B-Q4_0-GGUF/resolve/main/deepseek-r1-distill-qwen-1.5b-q4_0.gguf',
-    categories: ['reasoning', 'coding'],
+    categories: ['reasoning', 'coding', 'math', 'education'],
   },
   {
     id: 'deepseek-r1-distill-1.5b-q4km',
@@ -183,7 +183,22 @@ export const CURATED_MODELS: CuratedModel[] = [
     hfRepoId: 'turingevo/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M-GGUF',
     hfUrl: 'https://huggingface.co/turingevo/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M-GGUF',
     downloadUrl: 'https://huggingface.co/turingevo/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M-GGUF/resolve/main/deepseek-r1-distill-qwen-1.5b-q4_k_m.gguf',
-    categories: ['reasoning', 'coding'],
+    categories: ['reasoning', 'coding', 'math', 'education'],
+  },
+  {
+    id: 'gemma-3n-e2b-q4km',
+    displayName: 'Gemma-3n-E2B-it',
+    name: 'gemma-3n-E2B-it-Q4_K_M.gguf',
+    quantization: 'Q4_K_M',
+    sizeLabel: '3.03 GB',
+    sizeBytes: 3026881888,
+    capabilities: ['Chat', 'Reasoning', 'Multilingual', '32K Context'],
+    parameters: '2B',
+    author: 'unsloth',
+    hfRepoId: 'unsloth/gemma-3n-E2B-it-GGUF',
+    hfUrl: 'https://huggingface.co/unsloth/gemma-3n-E2B-it-GGUF',
+    downloadUrl: 'https://huggingface.co/unsloth/gemma-3n-E2B-it-GGUF/resolve/main/gemma-3n-E2B-it-Q4_K_M.gguf',
+    categories: ['chat', 'reasoning', 'health', 'education', 'writing'],
   },
 ];
 
@@ -236,7 +251,7 @@ class ModelStore {
         });
       }
     } catch (e) {
-      console.error('Failed to load models from storage', e);
+      if (__DEV__) console.error('Failed to load models from storage', e);
     }
   }
 
@@ -244,7 +259,7 @@ class ModelStore {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(this.installedModels));
     } catch (e) {
-      console.error('Failed to save models', e);
+      if (__DEV__) console.error('Failed to save models', e);
     }
   }
 

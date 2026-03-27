@@ -57,7 +57,7 @@ class ChatStore {
         });
       }
     } catch (e) {
-      console.error('Failed to load chats', e);
+      if (__DEV__) console.error('Failed to load chats', e);
     }
   }
 
@@ -65,7 +65,7 @@ class ChatStore {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(this.conversations));
     } catch (e) {
-      console.error('Failed to save chats', e);
+      if (__DEV__) console.error('Failed to save chats', e);
     }
   }
 

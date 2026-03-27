@@ -2,7 +2,7 @@ import { makeAutoObservable, runInAction } from 'mobx';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../services/supabaseClient';
 import { ensureProfile } from '../services/profileService';
-import { kvDel, kvGet, kvSet } from '../services/kv';
+import { secureDel, secureGet, secureSet } from '../services/secureKv';
 import * as Linking from 'expo-linking';
 
 const SESSION_KEY = 'kaviai.supabase.session.v1';
@@ -118,7 +118,7 @@ class AuthStore {
     this.isLoading = true;
     this.error = null;
     try {
-      const raw = await kvGet(SESSION_KEY);
+      const raw = await secureGet(SESSION_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as Session;
         const { data, error } = await supabase.auth.setSession({
@@ -148,7 +148,7 @@ class AuthStore {
         this.session = null;
         this.user = null;
       });
-      await kvDel(SESSION_KEY);
+      await secureDel(SESSION_KEY);
     } finally {
       runInAction(() => {
         this.isHydrated = true;
@@ -160,12 +160,12 @@ class AuthStore {
   private async persistSession(session: Session | null): Promise<void> {
     try {
       if (!session) {
-        await kvDel(SESSION_KEY);
+        await secureDel(SESSION_KEY);
         return;
       }
-      await kvSet(SESSION_KEY, JSON.stringify(session));
+      await secureSet(SESSION_KEY, JSON.stringify(session));
     } catch {
-      // If SecureStore fails, keep user signed-in for the current run; they may need to log in again next launch.
+      // If SecureStore fails, keep user signed-in for the current run
     }
   }
 
@@ -273,6 +273,31 @@ class AuthStore {
     }
   }
 
+  async deleteAccount(): Promise<boolean> {
+    if (!this.isSignedIn) return false;
+    this.isLoading = true;
+    this.error = null;
+    try {
+      const { error } = await supabase.rpc('delete_own_account');
+      if (error) throw error;
+    } catch (e: any) {
+      runInAction(() => {
+        this.error = e?.message ? String(e.message) : 'Failed to delete account';
+        this.isLoading = false;
+      });
+      return false;
+    }
+    // User row is deleted from auth.users; signOut may fail (session invalid) — that's fine
+    try { await supabase.auth.signOut(); } catch {}
+    runInAction(() => {
+      this.session = null;
+      this.user = null;
+      this.isLoading = false;
+    });
+    await secureDel(SESSION_KEY);
+    return true;
+  }
+
   async signOut(): Promise<void> {
     this.isLoading = true;
     this.error = null;
@@ -288,7 +313,7 @@ class AuthStore {
         this.user = null;
         this.isLoading = false;
       });
-      await kvDel(SESSION_KEY);
+      await secureDel(SESSION_KEY);
     }
   }
 }
