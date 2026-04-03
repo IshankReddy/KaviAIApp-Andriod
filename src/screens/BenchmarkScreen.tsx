@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Platform, ActivityIndicator,
+  StatusBar as RNStatusBar,
 } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation, DrawerActions } from '@react-navigation/native';
@@ -35,7 +36,7 @@ export default observer(function BenchmarkScreen() {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: Colors.surface,
-      paddingTop: Platform.OS === 'ios' ? 60 : 16,
+      paddingTop: Platform.OS === 'ios' ? 60 : (RNStatusBar.currentHeight ?? 24) + 12,
       paddingBottom: 14,
       paddingHorizontal: 16,
       borderBottomWidth: 1,

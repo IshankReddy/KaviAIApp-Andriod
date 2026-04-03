@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet,
+  View, Text, FlatList, TouchableOpacity as RNTouchableOpacity, StyleSheet,
   ActivityIndicator, KeyboardAvoidingView, Platform, Alert, Image,
+  StatusBar as RNStatusBar,
 } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation, DrawerActions } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { TouchableOpacity } from 'react-native-gesture-handler';
 import { chatStore } from '../stores/ChatStore';
 import { modelStore } from '../stores/ModelStore';
 import { settingsStore } from '../stores/SettingsStore';
@@ -18,9 +20,7 @@ import { useTheme, DesignTokens } from '../theme/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { secretsStore } from '../stores/SecretsStore';
 import { authStore } from '../stores/AuthStore';
-
-const LOGO_DARK = require('../../assets/logo-dark.png');
-const LOGO_LIGHT = require('../../assets/logo-light.png');
+import { themedBrandLogo } from '../constants/brandLogos';
 
 function shortModelName(displayName: string): string {
   const match = displayName.match(/^([A-Za-z]+)/);
@@ -43,7 +43,7 @@ export default observer(function ChatScreen() {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: Colors.surface,
-      paddingTop: Platform.OS === 'ios' ? 60 : 16,
+      paddingTop: Platform.OS === 'ios' ? 60 : (RNStatusBar.currentHeight ?? 24) + 12,
       paddingBottom: 14,
       paddingHorizontal: 16,
       borderBottomWidth: 1,
@@ -373,7 +373,7 @@ export default observer(function ChatScreen() {
       {!hasModels && !isCloudBackend ? (
         <View style={styles.emptyState}>
           <View style={styles.logoWrap}>
-            <Image source={dark ? LOGO_DARK : LOGO_LIGHT} style={styles.logo} resizeMode="contain" />
+            <Image source={themedBrandLogo(dark)} style={styles.logo} resizeMode="contain" />
           </View>
           <Text style={styles.emptyTitle}>Welcome to KaviAI</Text>
           <Text style={styles.emptySubtitle}>

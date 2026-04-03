@@ -7,6 +7,7 @@ LogBox.ignoreLogs(['Sending `onAnimatedValueUpdate` with no listeners registered
 import { NavigationContainer } from '@react-navigation/native';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ThemeProvider, useTheme } from './src/theme/theme';
 import { syncInstalledModelsFromDevice } from './src/services/DownloadService';
@@ -86,9 +87,11 @@ const AppContent = observer(function AppContent() {
 export default function App() {
   return (
     <GestureHandlerRootView style={styles.root}>
-      <ThemeProvider>
-        <AppContent />
-      </ThemeProvider>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <AppContent />
+        </ThemeProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

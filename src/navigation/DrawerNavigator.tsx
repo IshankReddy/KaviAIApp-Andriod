@@ -16,10 +16,9 @@ import AppInfoScreen     from '../screens/AppInfoScreen';
 // KaviModelsScreen removed pre-App Store: Apple rejects "Coming Soon" screens
 import PrivacyPolicyScreen  from '../screens/PrivacyPolicyScreen';
 import TermsScreen          from '../screens/TermsScreen';
+import { themedBrandLogo } from '../constants/brandLogos';
 
 const Drawer = createDrawerNavigator();
-const LOGO_DARK = require('../../assets/logo-dark.png');
-const LOGO_LIGHT = require('../../assets/logo-light.png');
 
 const MENU_ITEMS = [
   { name: 'Chat',           label: 'Chat',           icon: 'chat-outline',              iconActive: 'chat' },
@@ -200,7 +199,7 @@ const CustomDrawerContent = observer(function CustomDrawerContent(props: any) {
       {/* Brand — tap to go home */}
       <TouchableOpacity style={styles.brandRow} onPress={handleBrandPress} activeOpacity={0.8}>
         <Animated.View style={[styles.logoWrap, { transform: [{ scale: logoScale }] }]}>
-          <Image source={dark ? LOGO_DARK : LOGO_LIGHT} style={styles.logoImg} resizeMode="contain" />
+          <Image source={themedBrandLogo(dark)} style={styles.logoImg} resizeMode="contain" />
         </Animated.View>
         <Text style={styles.brandName}>KaviAI</Text>
       </TouchableOpacity>

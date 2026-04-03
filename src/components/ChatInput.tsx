@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import {
   View, TextInput, TouchableOpacity, StyleSheet, Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme, DesignTokens } from '../theme/theme';
 
@@ -17,9 +18,12 @@ interface Props {
 
 export default function ChatInput({ onSend, disabled, placeholder, onPlusPress, isGenerating, onStop }: Props) {
   const { Colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [text, setText] = useState('');
   const [expanded, setExpanded] = useState(false);
-  
+
+  const paddingBottom = Math.max(insets.bottom, 0) + 10;
+
   const styles = useMemo(() => StyleSheet.create({
     container: {
       backgroundColor: Colors.surface,
@@ -27,7 +31,6 @@ export default function ChatInput({ onSend, disabled, placeholder, onPlusPress, 
       borderTopColor: Colors.border,
       paddingHorizontal: 12,
       paddingTop: 10,
-      paddingBottom: Platform.OS === 'ios' ? 36 : 12,
       ...Platform.select({
         ios: {
           shadowColor: Colors.shadowColor,
@@ -97,7 +100,7 @@ export default function ChatInput({ onSend, disabled, placeholder, onPlusPress, 
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom }]}>
       <View style={styles.bar}>
         {/* + button */}
         <TouchableOpacity 

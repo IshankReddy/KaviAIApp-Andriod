@@ -1,15 +1,14 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Image, Platform, Animated, Easing,
+  StatusBar as RNStatusBar,
 } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation, DrawerActions } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme, DesignTokens } from '../theme/theme';
 import { LinearGradient } from 'expo-linear-gradient';
-
-const LOGO_DARK = require('../../assets/logo-dark.png');
-const LOGO_LIGHT = require('../../assets/logo-light.png');
+import { themedBrandLogo } from '../constants/brandLogos';
 
 export default observer(function KaviModelsScreen() {
   const navigation = useNavigation();
@@ -79,7 +78,7 @@ export default observer(function KaviModelsScreen() {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: Colors.surface,
-      paddingTop: Platform.OS === 'ios' ? 60 : 16,
+      paddingTop: Platform.OS === 'ios' ? 60 : (RNStatusBar.currentHeight ?? 24) + 12,
       paddingBottom: 14,
       paddingHorizontal: 16,
       borderBottomWidth: 1,
@@ -167,14 +166,14 @@ export default observer(function KaviModelsScreen() {
         <View style={styles.logoWrap}>
           <Animated.View style={[styles.ring, { transform: [{ scale: ringScale }], opacity: ringOpacity }]} />
           <Animated.View style={[styles.ring, { transform: [{ scale: ring2Scale }], opacity: ring2Opacity }]} />
-          <Animated.Image
-            source={dark ? LOGO_DARK : LOGO_LIGHT}
+          <Animated.View
             style={[styles.logo, {
               transform: [{ scale: Animated.multiply(logoScale, pulseAnim) }],
               opacity: logoOpacity,
             }]}
-            resizeMode="contain"
-          />
+          >
+            <Image source={themedBrandLogo(dark)} style={StyleSheet.absoluteFillObject} resizeMode="contain" />
+          </Animated.View>
         </View>
 
         <Animated.View style={{ opacity: textOpacity, transform: [{ translateY: textTranslate }] }}>

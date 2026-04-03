@@ -7,12 +7,12 @@
       "verificationSuccessUrl": "https://project-s0syc-chta4448s-ishankreddys-projects.vercel.app/"
     },
     "version": "1.0.2",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "orientation": "default",
+    "icon": "./assets/logo-dark.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": false,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/logo-dark.png",
       "resizeMode": "contain",
       "backgroundColor": "#0B0D11"
     },
@@ -63,10 +63,10 @@
       }
     },
     "android": {
-      "package": "com.kaviai.app",
+      "package": "com.kaviagentic.app",
       "adaptiveIcon": {
         "backgroundColor": "#0B0D11",
-        "foregroundImage": "./assets/android-icon-foreground.png"
+        "foregroundImage": "./assets/logo-dark.png"
       }
     },
     "plugins": [

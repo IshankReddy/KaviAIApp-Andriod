@@ -1,9 +1,7 @@
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, Animated, Easing, Dimensions, View } from 'react-native';
+import { StyleSheet, Animated, Easing, Dimensions, View, Image } from 'react-native';
 import { useTheme } from '../theme/theme';
-
-const LOGO_DARK = require('../../assets/logo-dark.png');
-const LOGO_LIGHT = require('../../assets/logo-light.png');
+import { themedBrandLogo } from '../constants/brandLogos';
 const { width: SW, height: SH } = Dimensions.get('window');
 
 interface Props {
@@ -260,15 +258,15 @@ export default function SplashOverlay({ onFinish }: Props) {
         />
       ))}
 
-      {/* Logo */}
-      <Animated.Image
-        source={dark ? LOGO_DARK : LOGO_LIGHT}
+      {/* Logo — wrap Image in Animated.View so Android reliably composites local assets with native driver */}
+      <Animated.View
         style={[
           styles.logo,
           { opacity: logoOpacity, transform: [{ scale: logoScale }] },
         ]}
-        resizeMode="contain"
-      />
+      >
+        <Image source={themedBrandLogo(dark)} style={StyleSheet.absoluteFillObject} resizeMode="contain" />
+      </Animated.View>
 
       {/* Title */}
       <Animated.Text

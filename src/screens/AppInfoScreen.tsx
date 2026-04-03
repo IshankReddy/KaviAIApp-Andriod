@@ -2,20 +2,21 @@ import React, { useMemo } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Platform, Linking, Image,
+  StatusBar as RNStatusBar,
 } from 'react-native';
 import { useNavigation, DrawerActions } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme, DesignTokens } from '../theme/theme';
+import { themedBrandLogo } from '../constants/brandLogos';
 
 const APP_VERSION = '1.0.2';
-const LOGO_DARK = require('../../assets/logo-dark.png');
-const LOGO_LIGHT = require('../../assets/logo-light.png');
 
 const EXTERNAL_LINKS = [
   { label: 'GitHub', url: 'https://github.com/KaviAIAgentic', icon: 'github' as const },
   { label: 'Hugging Face', url: 'https://huggingface.co/kaviwebdesigns', icon: 'robot-outline' as const },
   { label: 'YouTube', url: 'https://www.youtube.com/@kaviwebdesigns', icon: 'youtube' as const },
   { label: 'LinkedIn', url: 'https://www.linkedin.com/company/kavi-ai/', icon: 'linkedin' as const },
+  { label: 'Website', url: 'https://www.kaviagentic.com', icon: 'web' as const },
 ];
 
 const LEGAL_LINKS = [
@@ -41,7 +42,7 @@ export default function AppInfoScreen() {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: Colors.surface,
-      paddingTop: Platform.OS === 'ios' ? 60 : 16,
+      paddingTop: Platform.OS === 'ios' ? 60 : (RNStatusBar.currentHeight ?? 24) + 12,
       paddingBottom: 14,
       paddingHorizontal: 16,
       borderBottomWidth: 1,
@@ -254,7 +255,7 @@ export default function AppInfoScreen() {
         {/* App identity */}
         <View style={styles.appBanner}>
           <View style={styles.appLogoWrap}>
-            <Image source={dark ? LOGO_DARK : LOGO_LIGHT} style={styles.appLogo} resizeMode="contain" />
+            <Image source={themedBrandLogo(dark)} style={styles.appLogo} resizeMode="contain" />
           </View>
           <Text style={styles.appName}>KaviAI</Text>
           <Text style={styles.appTagline}>On-device AI, entirely private</Text>
